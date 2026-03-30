@@ -30,7 +30,7 @@ class Model:
                 f.write(str(position) + "\n")
 
     def estimate_path(self):
-        for _ in tqdm.tqdm(range(10 * 3600)):
+        for _ in tqdm.tqdm(range(100 * 3600)):
             self.rocket.velocity += self.calc_force() / self.rocket.mass_ship * dt
             self.rocket.position += self.rocket.velocity * dt
             self.path.append(self.rocket.position)

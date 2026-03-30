@@ -9,7 +9,7 @@ class Visualize:
         self.FRAME_RATE = 60
         self.clock = pygame.time.Clock()
         self.time_i = 0
-        self.multi = 30
+        self.multi = 10
         self.step_size = 100  # speed
         self.screen_size = [500, 500]
         self.path_drawing = pygame.Surface(self.screen_size)
@@ -17,6 +17,7 @@ class Visualize:
         self.screen = pygame.display.set_mode(self.screen_size)
         self.gen = self.time_step()
         self.offset = Vector2d(0, 0)
+        self.margin = Vector2d(50, 50)
         with open(file_path) as f:
             self.dt = int(f.readline())
             self.planets = []
@@ -29,6 +30,7 @@ class Visualize:
                 self.offset.x = min(point.x, self.offset.x)
                 self.offset.y = min(point.y, self.offset.y)
                 self.path.append(point)
+        self.offset -= self.margin
         self.pos = self.path[0]
         self.draw_planets()
 
@@ -47,9 +49,14 @@ class Visualize:
     # endregion
     
     def time_step(self):
-        while self.time_i < len(self.path):
+        while 0 <= self.time_i < len(self.path):
             yield self.path[self.time_i]
             self.time_i += self.step_size
+        if self.time_i < 0:
+            self.time_i = 0
+        if self.time_i >= len(self.path):
+            self.time_i = len(self.path) - 1
+        self.step_size = 0
 
     def run(self):
         while True:
@@ -61,29 +68,42 @@ class Visualize:
                     if event.key == pygame.K_ESCAPE:
                         pygame.quit()
                         sys.exit()
+                    if event.key == pygame.K_UP:
+                        self.step_size += 100
+                    elif event.key == pygame.K_DOWN:
+                        self.step_size -= 100
+                    elif event.key == pygame.K_SPACE:
+                        self.step_size = 0
+                    elif event.key == pygame.K_LEFT:
+                        self.time_i = len(self.path) - 1
+                        self.step_size = 0
+                    elif event.key == pygame.K_RIGHT:
+                        self.time_i = 0
+                        self.step_size = 0
             self.draw()
             self.clock.tick(self.FRAME_RATE)
     
     def draw_planets(self):
         for planet in self.planets:
             planet: Planet
-            pygame.draw.circle(self.path_drawing, "dark gray", planet.position.pos, planet.radius)
+            pygame.draw.circle(self.path_drawing, "dark gray", (planet.position - self.offset).pos, planet.radius * self.multi)
 
     def draw_path(self):
         try:
             n_pos = next(self.gen)
-            pygame.draw.line(self.path_drawing, "red", (self.pos + self.offset).pos, (n_pos + self.offset).pos)
+            pygame.draw.line(self.path_drawing, "red", (self.pos - self.offset).pos, (n_pos - self.offset).pos)
             self.pos = n_pos
         except StopIteration:
-            sys.exit()
+            self.gen = self.time_step()
     
     def draw(self):
         self.draw_path()
         self.screen.blit(self.path_drawing, [0,0])
+        pygame.draw.circle(self.screen, "black", (self.pos - self.offset).pos, 5)
         pygame.display.flip()
                         
 
 if __name__ == "__main__":
-    v = Visualize("paths\\3_30_13_42_8.path")
+    v = Visualize("paths\\3_30_13_52_46.path")
     v.run()
 
