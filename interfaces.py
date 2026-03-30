@@ -30,6 +30,9 @@ class Vector2d:
     def dist(self, other: "Vector2d"):
         return sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 
+    def mag(self):
+        return sqrt(self.x ** 2 + self.y ** 2)
+
     # region: properties and dunder methods
     @property
     def x(self):
@@ -75,7 +78,8 @@ class Rocket:
     velocity: Vector2d
 
     mass_fuel: float = 0
-    velocity_fuel: float = 0
+    speed_fuel: float = 0
+    thrust: Vector2d = 0
 
     def __str__(self):
         return f"{self.mass_ship} {self.velocity.x} {self.velocity.y}"

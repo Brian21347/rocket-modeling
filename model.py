@@ -35,6 +35,25 @@ class Model:
             self.rocket.position += self.rocket.velocity * dt
             self.path.append(self.rocket.position)
 
+    def estimate_path_with_mass_update(self):
+        for _ in tqdm.tqdm(range(10 * 3600)):
+            thrust : Vector2d = 0
+            if self.rocket.mass_fuel > 0:
+                thrust = self.rocket.thrust
+                """
+                dM * speed_fuel - M dV = 0
+                since thurst = | M dV/dt |
+                dM * speed_fuel = | thurst | * dt
+                """
+                dmassfuel = - thrust.mag() / self.rocket.speed_fuel * dt
+                self.rocket.mass_fuel += dmassfuel 
+
+            self.rocket.velocity += (self.calc_force() + self.rocket.thrust) / self.rocket.mass_ship * dt
+            self.rocket.position += self.rocket.velocity * dt
+            #calculate mass change
+            self.rocket.mass_ship 
+            self.path.append(self.rocket.position)
+
     def calc_force(self) -> Vector2d:
         force = Vector2d([0, 0])
         for planet in self.planets:
