@@ -40,7 +40,7 @@ class Model:
 
     def estimate_path_with_mass_update(self):
         for _ in tqdm.tqdm(range(10 * 3600)):
-            thrust : Vector2d = 0
+            thrust : Vector2d = Vector2d(0,0)
             if self.rocket.mass_fuel > 0:
                 thrust = self.rocket.thrust
                 """

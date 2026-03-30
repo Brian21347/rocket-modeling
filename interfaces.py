@@ -79,7 +79,7 @@ class Rocket:
 
     mass_fuel: float = 0
     speed_fuel: float = 0
-    thrust: Vector2d = 0
+    thrust: Vector2d = Vector2d(0, 0)
 
     def __str__(self):
         return f"{self.mass_ship} {self.velocity.x} {self.velocity.y}"
