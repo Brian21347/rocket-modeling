@@ -34,13 +34,21 @@ class Vector2d:
     @property
     def x(self):
         return self.pos[0]
+    
+    @x.setter
+    def x(self, val: float):
+        self.pos = val, self.pos[1]
 
     @property
     def y(self):
         return self.pos[1]
 
+    @y.setter
+    def y(self, val: float):
+        self.pos = self.pos[0], val
+
     def __str__(self) -> str:
-        return str(self.pos)
+        return f"{self.x} {self.y}"
 
     def __add__(self, other: "Vector2d"):
         return Vector2d(self.x + other.x, self.y + other.y)
@@ -64,10 +72,14 @@ class Vector2d:
 class Rocket:
     position: Vector2d
     mass_ship: float
-    initial_velocity: float
+    velocity: Vector2d
 
     mass_fuel: float = 0
     velocity_fuel: float = 0
+
+    def __str__(self):
+        return f"{self.mass_ship} {self.velocity.x} {self.velocity.y}"
+    
 
 
 @dataclass
@@ -76,3 +88,11 @@ class Planet:
     mass: float
     radius: float = 0
     air_density_func: Callable[[int], int] = lambda dist: 0
+
+    def __str__(self):
+        return f"{self.position.x} {self.position.y} {self.mass} {self.radius}"
+    
+    def from_str(self, string: str):
+        l = list(map(float, string.split()))
+        self.position = Vector2d(l[0], l[1])
+        self.mass = l[2]
