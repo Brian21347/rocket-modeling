@@ -14,7 +14,7 @@ class Model:
         self.planets = planets
         self.path = []
 
-    def save_path(self, path: str = None):
+    def save_path(self, path: str | None = None):
         SAVE_PATH = "paths"
 
         if not self.path:
@@ -22,7 +22,7 @@ class Model:
 
         now = datetime.datetime.now()
         if path is None:
-            path = os.path.join(SAVE_PATH, f"{now.month}_{now.day}_{now.hour}_{now.minute}_{now.second}.path")
+            path = join(SAVE_PATH, f"{now.month}_{now.day}_{now.hour}_{now.minute}_{now.second}.path")
 
         with open(path, mode="w") as f:
             f.write(str(dt) + "\n")
