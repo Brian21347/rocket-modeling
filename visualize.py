@@ -10,7 +10,7 @@ class Visualize:
         self.FRAME_RATE = 60
         self.clock = pygame.time.Clock()
         self.time_i = 0
-        self.multi = 10
+        self.multi = 2
         self.step_size = 100  # speed
         self.screen_size = [500, 500]
         self.path_drawing = pygame.Surface(self.screen_size)
