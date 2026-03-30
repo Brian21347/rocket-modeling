@@ -45,11 +45,11 @@ class Model:
 
 
 if __name__ == "__main__":
-    r = Rocket(Vector2d(10, 0), 100, Vector2d(0, sqrt(10 * G)))
+    r = Rocket(Vector2d(0, 0), 100, Vector2d(0, sqrt(10 * G)))
     planets = [
-        Planet(Vector2d(0, 0), 100, 100),
-        # Planet(Vector2d(0, 10), 100),
-        # Planet(Vector2d(10, 0), 100),
+        Planet(Vector2d(10, 10), 100, 10),
+        Planet(Vector2d(0, 10), 100, 10),
+        Planet(Vector2d(10, 0), 100, 10),
     ]
     m = Model(r, planets)
     m.estimate_path()

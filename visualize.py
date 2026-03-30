@@ -1,6 +1,7 @@
 import pygame
 import sys
 from interfaces import *
+from os.path import join
 
 
 class Visualize:
@@ -86,7 +87,7 @@ class Visualize:
     def draw_planets(self):
         for planet in self.planets:
             planet: Planet
-            pygame.draw.circle(self.path_drawing, "dark gray", (planet.position - self.offset).pos, planet.radius * self.multi)
+            pygame.draw.circle(self.path_drawing, "dark gray", (planet.position - self.offset).pos, planet.radius)
 
     def draw_path(self):
         try:
@@ -104,6 +105,6 @@ class Visualize:
                         
 
 if __name__ == "__main__":
-    v = Visualize("paths\\3_30_13_52_46.path")
+    v = Visualize(join("paths", "triple_planet.path"))
     v.run()
 
