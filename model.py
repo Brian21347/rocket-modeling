@@ -5,7 +5,7 @@ import datetime
 
 
 dt = 10  # units: seconds
-SAVE_PATH = "paths"
+
 
 
 class Model:
@@ -14,14 +14,17 @@ class Model:
         self.planets = planets
         self.path = []
 
-    def save_path(self):
+    def save_path(self, path: str = None):
+        SAVE_PATH = "paths"
+
         if not self.path:
             raise ValueError("Path not created")
 
         now = datetime.datetime.now()
-        file_name = f"{now.month}_{now.day}_{now.hour}_{now.minute}_{now.second}.path"
+        if path is None:
+            path = os.path.join(SAVE_PATH, f"{now.month}_{now.day}_{now.hour}_{now.minute}_{now.second}.path")
 
-        with open(join(SAVE_PATH, file_name), mode="w") as f:
+        with open(path, mode="w") as f:
             f.write(str(dt) + "\n")
             f.write(str(len(self.planets)) + "\n")
             for planet in self.planets:
