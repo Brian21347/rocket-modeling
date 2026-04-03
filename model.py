@@ -3,13 +3,11 @@ import tqdm
 from os.path import join
 import datetime
 
-
-
-
-
-
 class Model:
-    def __init__(self, rocket: Rocket, planets: Sequence[Planet], simulation_seconds: int = 1000 * 3600, dt: int = 10):
+    def __init__(self, rocket: Rocket, 
+                 planets: Sequence[Planet], 
+                 simulation_seconds: int = 1000 * 3600, 
+                 dt: int = 10):
         self.rocket = rocket
         self.planets = planets
         self.path = []
@@ -51,7 +49,7 @@ class Model:
                 dM * speed_fuel = | thurst | * dt
                 """
                 dmassfuel = - thrust.mag() / self.rocket.speed_fuel * self.dt
-                self.rocket.mass_fuel += dmassfuel 
+                self.rocket.mass_fuel += dmassfuel
 
             self.rocket.velocity += (self.calc_force() + self.rocket.thrust) / (self.rocket.mass_ship + self.rocket.mass_fuel) * self.dt
             self.rocket.position += self.rocket.velocity * self.dt

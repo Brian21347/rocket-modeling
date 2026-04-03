@@ -1,0 +1,220 @@
+\documentclass{article}
+\usepackage{graphicx} %for images
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage[margin=1in]{geometry}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+\title{Modeling Travel in Gravitational FieldsModeling Travel in Gravitational Fields}
+\author{Brian Zhou, Minh Nguyen, James Overcash} 
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+A rocket with some known initial position $p_0$, velocity $v_0$, and mass $M$ is traveling through space heading in the direction of $v_0$. The object is propelled by thrusters with thrust $f_t$ and exhaust speed $v_t$. In space lie $N$ planets with fixed positions $p_1, p_2, \dots, p_N$ and known masses $m_1, m_2, \dots, m_N$  whose gravity influences the object's motion. Can we determine whether the rocket will ever land on a target planet?
+
+\section{Analysis}
+We model the scenario using classical Newtonian mechanics. We consider the rocket and planets to all be point-masses. Thus, according to Newton's second law, the acceleration $a$ of the object can be related to the net force exerted on the rocket $F_{\text{net}}$ by the equation
+\[
+\vec{F_{\text{net}}} = m \vec{a}.
+\]
+We will also assume that space is a perfect vacuum. Thus, the rocket only experiences a gravitational force due to the planets and a thrust force due to it's thruster. According to Newton's law of universal gravitation (Neil Gehrels Swift Learning Center, n.d.), the $i$th gravitational force $F_i$ on the rocket due to the $i$th planet is of the form
+\[
+\vec{F_i}(t) = G\frac{M m_i}{\lvert \vec{p(t)} - \vec{p_i} \rvert^3}(\vec{p(t)} - \vec{p_i}),
+\]
+where $G \approx 6.674 \times 10^{-11}$ is Newton's gravitational constant.
+
+The non-linear system is that of the gravitational acceleration. $\vec{F}$ is the force on the object by a mass $m_1$ where the displacement between them is $\vec{r}$. 
+\begin{align*}
+          F &= G\frac{m \cdot m_1}{ |\vec{r}| ^ 2} \cdot \hat{r} \\ 
+    \vec{a} &= G_x\frac{m_1}{|\vec{r}|^3} \cdot \vec{r} \\
+    \begin{pmatrix} x'' \\ y'' \end{pmatrix} &= \begin{pmatrix}G\frac{}{}\end{pmatrix}
+\end{align*}
+
+
+
+
+\section{Conclusion}
+We use Euler's method to quickly simulate paths using the Python code attached in the appendix. 
+We find that some limitations of the computational approach includes: we cannot guarantee that the rocket will not eventually land on a planet, we cannot guarantee the path found is the optimal path.
+\section{References}
+Result in Figure 1 were obtained using a Python script provided in Appendix 1
+\begin{thebibliography}{99}
+\bibitem{golbeck2015}
+Neil Gehrels Swift Learning Center. (n.d.). Imagine.gsfc.nasa.gov. \url{https://imagine.gsfc.nasa.gov/observatories/learning/swift/classroom/law_grav_derivation.html}
+\end{thebibliography}
+
+
+\section{Appendices}
+`model.py` contains the code modeling the trajectory of the rocket:
+\begin{lstlisting}[language=Python]
+from interfaces import *
+import tqdm
+from os.path import join
+import datetime
+
+class Model:
+    def __init__(self, rocket: Rocket, 
+                 planets: Sequence[Planet], 
+                 simulation_seconds: int = 1000 * 3600, 
+                 dt: int = 10):
+        self.rocket = rocket
+        self.planets = planets
+        self.path = []
+        self.simulation_seconds = simulation_seconds
+        self.dt = dt  # units: seconds
+
+    def save_path(self, path: str | None = None):
+        SAVE_PATH = "paths"
+
+        if not self.path:
+            raise ValueError("Path not created")
+
+        now = datetime.datetime.now()
+        if path is None:
+            path = join(SAVE_PATH, f"{now.month}_{now.day}_{now.hour}_{now.minute}_{now.second}.path")
+
+        with open(path, mode="w") as f:
+            f.write(str(self.dt) + "\n")
+            f.write(str(len(self.planets)) + "\n")
+            for planet in self.planets:
+                f.write(str(planet) + "\n")
+            for position in self.path:
+                f.write(str(position) + "\n")
+
+    def estimate_path(self):
+        for _ in tqdm.tqdm(range(self.simulation_seconds//self.dt)):
+            self.rocket.velocity += self.calc_force() / self.rocket.mass_ship * self.dt
+            self.rocket.position += self.rocket.velocity * self.dt
+            self.path.append(self.rocket.position)
+
+    def estimate_path_with_mass_update(self):
+        for _ in tqdm.tqdm(range(self.simulation_seconds//self.dt)):
+            thrust = Vector2d(0,0)
+            if self.rocket.mass_fuel > 0:
+                thrust = self.rocket.thrust
+                """
+                dM * speed_fuel - M dV = 0
+                since thurst = | M dV/dt |
+                dM * speed_fuel = | thurst | * dt
+                """
+                dmassfuel = - thrust.mag() / self.rocket.speed_fuel * self.dt
+                self.rocket.mass_fuel += dmassfuel
+
+            self.rocket.velocity += (self.calc_force() + self.rocket.thrust) / (self.rocket.mass_ship + self.rocket.mass_fuel) * self.dt
+            self.rocket.position += self.rocket.velocity * self.dt
+            self.path.append(self.rocket.position)
+
+    def calc_force(self) -> Vector2d:
+        force = Vector2d([0, 0])
+        for planet in self.planets:
+            dist = max(self.rocket.position.dist(planet.position), 1e-3)
+            magnitude = G * self.rocket.mass_ship * planet.mass / dist**3
+            force += (planet.position - self.rocket.position) * magnitude
+        return force
+
+
+if __name__ == "__main__":
+    r = Rocket(Vector2d(0, 0), 100, Vector2d(0, sqrt(10 * G)))
+    planets = [
+        Planet(Vector2d(10, 10), 100, 10),
+        Planet(Vector2d(0, 10), 100, 10),
+        Planet(Vector2d(10, 0), 100, 10),
+    ]
+    m = Model(r, planets)
+    m.estimate_path()
+    m.save_path()
+\end{lstlisting}
+
+`interfaces.py` contain the interfaces used in `model.py`:
+\begin{lstlisting}
+from dataclasses import dataclass
+from typing import overload
+from collections.abc import Sequence, Callable
+from math import sqrt
+
+
+class Vector2d:
+    pos: tuple[float, float]
+
+    @overload
+    def __init__(self, x: float, y: float, /) -> None: ...
+
+    @overload
+    def __init__(self, pos: Sequence[float,], /) -> None: ...
+
+    def __init__(self, *args) -> None:
+        if len(args) > 2:
+            raise ValueError()
+        if len(args) == 1:
+            self.pos = tuple(args[0])
+        elif len(args) == 2:
+            self.pos = args
+
+    def dist(self, other: "Vector2d"):
+        return sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
+
+    def mag(self):
+        return sqrt(self.x ** 2 + self.y ** 2)
+
+    @property
+    def x(self):
+        return self.pos[0]
+    
+    @x.setter
+    def x(self, val: float):
+        self.pos = val, self.pos[1]
+
+    @property
+    def y(self):
+        return self.pos[1]
+
+    @y.setter
+    def y(self, val: float):
+        self.pos = self.pos[0], val
+
+    def __str__(self) -> str:
+        return f"{self.x} {self.y}"
+
+    def __add__(self, other: "Vector2d"):
+        return Vector2d(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other: "Vector2d"):
+        return Vector2d(self.x - other.x, self.y - other.y)
+
+    def __mul__(self, other: float):
+        return Vector2d(self.x * other, self.y * other)
+
+    def __rmul__(self, other: float):
+        return self * other
+
+    def __truediv__(self, other: float):
+        return Vector2d(self.x / other, self.y / other)
+
+
+@dataclass
+class Rocket:
+    position: Vector2d
+    mass_ship: float
+    velocity: Vector2d
+
+    mass_fuel: float = 0
+    speed_fuel: float = 0
+    thrust: Vector2d = Vector2d(0, 0)
+
+
+@dataclass
+class Planet:
+    position: Vector2d
+    mass: float
+    radius: float = 0
+\end{lstlisting}
+
+
+\section{Websites}
+
+\end{document}
