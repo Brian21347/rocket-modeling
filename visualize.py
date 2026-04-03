@@ -91,7 +91,7 @@ class Visualize:
             self.draw()
             self.clock.tick(self.FRAME_RATE)
 
-    def save_animation(self):
+    def save_animation(self, save_path: str):
         TIME_LIMIT = 10  # seconds
         FPS = 60
         FRAMES = TIME_LIMIT * FPS
@@ -107,7 +107,8 @@ class Visualize:
             self.draw(True)
             images.append(image)
 
-        images[0].save("animation.gif", save_all=True, append_images=images[1:], duration=50)
+        print("Saving animation...")
+        images[0].save(save_path, save_all=True, append_images=images[1:], duration=50)
 
     def get_color(self, target_luminance=0.6):
         rgb = colorsys.hsv_to_rgb(self.time_i / len(self.path), 1, 1)
@@ -168,4 +169,4 @@ class Visualize:
 if __name__ == "__main__":
     v = Visualize(join("test_paths", "test_.path"))
     # v.run()
-    v.save_animation()
+    v.save_animation(join("animations", "test.gif"))
