@@ -5,6 +5,7 @@ from math import sqrt
 
 
 G = 6.6674e-11
+BASE_ANIMATION_STEPS = 100
 
 
 class Vector2d:
@@ -31,13 +32,13 @@ class Vector2d:
         return sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 
     def mag(self):
-        return sqrt(self.x ** 2 + self.y ** 2)
+        return sqrt(self.x**2 + self.y**2)
 
     # region: properties and dunder methods
     @property
     def x(self):
         return self.pos[0]
-    
+
     @x.setter
     def x(self, val: float):
         self.pos = val, self.pos[1]
@@ -74,16 +75,15 @@ class Vector2d:
 @dataclass
 class Rocket:
     position: Vector2d
-    mass_ship: float
     velocity: Vector2d
+    mass_ship: float
 
     mass_fuel: float = 0
     speed_fuel: float = 0
     thrust: Vector2d = Vector2d(0, 0)
 
     def __str__(self):
-        return f"{self.mass_ship} {self.velocity.x} {self.velocity.y}"
-    
+        return f"{self.position} {self.velocity} {self.mass_ship} {self.mass_fuel} {self.speed_fuel} {self.thrust}"
 
 
 @dataclass
@@ -95,8 +95,31 @@ class Planet:
 
     def __str__(self):
         return f"{self.position.x} {self.position.y} {self.mass} {self.radius}"
-    
+
     def from_str(self, string: str):
         l = list(map(float, string.split()))
         self.position = Vector2d(l[0], l[1])
         self.mass = l[2]
+
+
+def planet_from_str(string: str):
+    l = list(map(float, string.split()))
+    position = Vector2d(l[0], l[1])
+    mass = l[2]
+    radius = l[3]
+    return Planet(position, mass, radius)
+
+
+def point_from_str(str: str):
+    l = list(map(float, str.split()))
+    return Vector2d(l[0], l[1])
+
+def rocket_from_str(str: str):
+    l = list(map(float, str.split()))
+    position = Vector2d(l[0], l[1])
+    velocity = Vector2d(l[2], l[3])
+    ship_mass = l[4]
+    fuel_mass = l[5]
+    fuel_speed = l[6]
+    thrust = Vector2d(l[7], l[8])
+    return Rocket(position, velocity, ship_mass, fuel_mass, fuel_speed, thrust)
