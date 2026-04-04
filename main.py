@@ -27,7 +27,7 @@ def main():
         r = Rocket(Vector2d(0, 0), Vector2d(speed * cos(angle), speed * sin(angle)), 100)
         PATH = os.path.join("test_paths", f"{int_angle}.path")
         m = model.Model(r, planets, 1_000, 10)
-        crash_dest = m.estimate_path_with_mass_update()
+        crash_dest = m.estimate_path()
         if crash_dest is not None and crash_dest.position == target_planet.position:
             print("Reached target!")
             v = Visualize(PATH)

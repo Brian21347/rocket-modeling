@@ -91,13 +91,20 @@ class Visualize:
             self.draw()
             self.clock.tick(self.FRAME_RATE)
 
-    def save_animation(self, save_path: str):
+    def save_animation(self, save_path: str, save_as_frames=False):
+        """
+        If save_as_frames is true, then save_path is the directory where the animation frames are saved
+        """
+        
+        
         TIME_LIMIT = 10  # seconds
-        FPS = 60
+        # FPS = 60
+        FPS = 12
         FRAMES = TIME_LIMIT * FPS
         images = []
         self.step_size = max(len(self.path) // FRAMES, 1)
         self.path
+        self.draw(True)  # skip the initial, black screen
         while self.time_i < len(self.path) - 1:
             image = Image.frombytes(
                 "RGB",
@@ -108,7 +115,11 @@ class Visualize:
             images.append(image)
 
         print("Saving animation...")
-        images[0].save(save_path, save_all=True, append_images=images[1:], duration=50)
+        if not save_as_frames:
+            images[0].save(save_path, save_all=True, append_images=images[1:], duration=50)
+            return
+        for i, image in enumerate(images):
+            image.save(join(save_path, f"image-{i}.png"))
 
     def get_color(self, target_luminance=0.6):
         rgb = colorsys.hsv_to_rgb(self.time_i / len(self.path), 1, 1)
@@ -135,6 +146,7 @@ class Visualize:
 
     def draw_path(self, high_fidelity):
         try:
+            n_pos = next(self.gen)
             if high_fidelity:
                 for i in range(self.time_i + 1, self.time_i + self.step_size):
                     if i == len(self.path):
@@ -147,14 +159,13 @@ class Visualize:
                         (n_pos - self.offset).pos,
                     )
                     self.pos = n_pos
-            n_pos = next(self.gen)
-                
-            pygame.draw.line(
-                self.path_drawing,
-                self.get_color(),
-                (self.pos - self.offset).pos,
-                (n_pos - self.offset).pos,
-            )
+            else:
+                pygame.draw.line(
+                    self.path_drawing,
+                    self.get_color(),
+                    (self.pos - self.offset).pos,
+                    (n_pos - self.offset).pos,
+                )
             self.pos = n_pos
         except StopIteration:
             self.gen = self.time_step()
@@ -168,5 +179,6 @@ class Visualize:
 
 if __name__ == "__main__":
     v = Visualize(join("test_paths", "test_.path"))
-    # v.run()
+    v.run()
     v.save_animation(join("animations", "test.gif"))
+    # v.save_animation("animation_frames", save_as_frames=True)
