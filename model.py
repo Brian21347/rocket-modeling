@@ -38,8 +38,9 @@ class Model:
             self.path = []
             return
         raise ValueError("Incorrect number of arguments provided")
+
     # endregion
-    
+
     def load_from_path(self, path):
         # read header
         with open(path) as f:
@@ -82,7 +83,11 @@ class Model:
 
     def crash_checking(self):
         for planet in self.planets:
-            if abs(self.rocket.position.x - planet.position.x) + abs(self.rocket.position.y - planet.position.y) > planet.radius: 
+            if (
+                abs(self.rocket.position.x - planet.position.x)
+                + abs(self.rocket.position.y - planet.position.y)
+                > planet.radius
+            ):
                 continue
             dist = self.rocket.position.dist(planet.position)
             if dist <= planet.radius:
@@ -102,10 +107,12 @@ class Model:
                 thrust = self.rocket.thrust
                 self.rocket.mass_fuel += dmassfuel
 
+            rocket_mass = self.rocket.mass_fuel + self.rocket.mass_ship
             self.rocket.velocity += (
-                (self.calc_force() + thrust)
-                * self.dt
-            )
+                thrust / rocket_mass
+                + self.calc_force()
+                - dmassfuel / rocket_mass * self.rocket.velocity
+            ) * self.dt
             self.rocket.position += self.rocket.velocity * self.dt
             self.path.append(self.rocket.position)
             if (crash_dest := self.crash_checking()) != None:
@@ -115,9 +122,8 @@ class Model:
         force = Vector2d([0, 0])
         for planet in self.planets:
             dist = self.rocket.position.dist(planet.position)
-            magnitude = G * planet.mass / dist**3
-            force += (planet.position - self.rocket.position) * magnitude
-        return force
+            force += (planet.position - self.rocket.position) * planet.mass / dist**3
+        return G * force
 
 
 if __name__ == "__main__":
