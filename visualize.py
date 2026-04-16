@@ -10,13 +10,14 @@ class Visualize:
         LINES = 8_000_000
 
         pygame.init()
+        pygame.key.set_repeat(200, 100)
         self.FRAME_RATE = 60
         self.clock = pygame.time.Clock()
         self.time_i = 0
         self.step_size = 1  # speed
         self.screen_size = Vector2d(500, 500)
         self.path_drawing = pygame.Surface(self.screen_size.pos)
-        self.path_drawing.fill("light gray")
+        self.path_drawing.fill("white")
         self.screen = pygame.display.set_mode(self.screen_size.pos)
         self.gen = self.time_step()
         self.offset = Vector2d(0, 0)
@@ -54,6 +55,7 @@ class Visualize:
             Planet(planet.position * self.multi, planet.mass, planet.radius * self.multi)
             for planet in self.planets
         ]
+        self.draw_grid()
         self.draw_planets()
 
     def time_step(self):
@@ -95,8 +97,7 @@ class Visualize:
         """
         If save_as_frames is true, then save_path is the directory where the animation frames are saved
         """
-        
-        
+
         TIME_LIMIT = 10  # seconds
         # FPS = 60
         FPS = 12
@@ -143,7 +144,7 @@ class Visualize:
                 (planet.position - self.offset).pos,
                 max(planet.radius, 2),
             )
-
+    
     def draw_path(self, high_fidelity):
         try:
             n_pos = next(self.gen)
@@ -169,6 +170,16 @@ class Visualize:
             self.pos = n_pos
         except StopIteration:
             self.gen = self.time_step()
+    
+    def draw_grid(self):
+        AXIS_COLOR = "black"
+        MAJOR_TIC_SIZE = 100
+        MAJOR_TIC_COLOR = "#999999"
+        MINOR_TIC_SIZE = 25
+        MINOR_TIC_COLOR = "#E0E0E0"
+        pygame.draw.line(self.path_drawing, AXIS_COLOR, (self.offset.x, 0), (self.offset.x, self.screen_size.y))
+        pygame.draw.line(self.path_drawing, AXIS_COLOR, (0, self.offset.y), (self.screen_size.x, self.offset.y))
+
 
     def draw(self, high_fidelity=False):
         self.draw_path(high_fidelity)
@@ -180,5 +191,5 @@ class Visualize:
 if __name__ == "__main__":
     v = Visualize(join("test_paths", "test_.path"))
     v.run()
-    v.save_animation(join("animations", "test.gif"))
+    # v.save_animation(join("animations", "test.gif"))
     # v.save_animation("animation_frames", save_as_frames=True)

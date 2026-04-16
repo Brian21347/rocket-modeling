@@ -4,6 +4,8 @@ from os.path import join, exists
 from os import SEEK_END, SEEK_CUR
 import datetime
 from typing import overload
+import sys
+from math import pi, sin, cos
 
 
 class Model:
@@ -81,7 +83,7 @@ class Model:
                 f.write(str(position) + "\n")
             f.write(str(self.rocket) + "\n")
 
-    def crash_checking(self):
+    def crash_checking(self) -> Planet | None:
         for planet in self.planets:
             if (
                 abs(self.rocket.position.x - planet.position.x)
@@ -94,12 +96,15 @@ class Model:
                 return planet
         return None
 
-    def estimate_path(self):
+    def estimate_path(self) -> Planet | None:
         dmassfuel = -self.rocket.thrust.mag() / self.rocket.speed_fuel * self.dt
-        for _ in tqdm.tqdm(range(self.simulation_seconds // self.dt)):
+        print(dmassfuel)
+        prev = 0
+        self.path.append(self.rocket.position)
+        for iteration in tqdm.tqdm(range(self.simulation_seconds // self.dt)):
             if self.rocket.mass_fuel == 0:
                 thrust = Vector2d(0, 0)
-            elif self.rocket.mass_fuel - dmassfuel < 0:
+            elif self.rocket.mass_fuel + dmassfuel < 0:
                 thrust_percent = self.rocket.mass_fuel / -dmassfuel
                 thrust = self.rocket.thrust * thrust_percent
                 self.rocket.mass_fuel = 0
@@ -114,7 +119,9 @@ class Model:
                 - dmassfuel / rocket_mass * self.rocket.velocity
             ) * self.dt
             self.rocket.position += self.rocket.velocity * self.dt
-            self.path.append(self.rocket.position)
+            if iteration - prev == BASE_ANIMATION_STEPS:
+                self.path.append(self.rocket.position)
+                prev = iteration
             if (crash_dest := self.crash_checking()) != None:
                 return crash_dest
 
@@ -122,22 +129,28 @@ class Model:
         force = Vector2d([0, 0])
         for planet in self.planets:
             dist = self.rocket.position.dist(planet.position)
-            force += (planet.position - self.rocket.position) * planet.mass / dist**3
+            try:
+                force += (planet.position - self.rocket.position) * planet.mass / dist**3
+            except:
+                print(self.rocket.position)
+                sys.exit()
         return G * force
 
 
 if __name__ == "__main__":
-    r = Rocket(Vector2d(6.37001e6, 0), Vector2d(0, 0), 3e6, 2.5e6, 2400, Vector2d(33e4, 0))
+    angle = -pi / 8
+    x, y = cos(angle), sin(angle)
+    speed = sqrt(10 * G)
+    r = Rocket(Vector2d(0, 0), Vector2d(speed * x, speed * y), 100, 10, 1e-7, Vector2d(1e-9, 0))
     planets = [
-        Planet(Vector2d(0, 0), 6e24, 6.37e6),
-        Planet(Vector2d(0, 2.25e8), 6e24, 6.37e6),
-        Planet(Vector2d(5e8, 4e8), 6e24, 6.37e6),
-        Planet(Vector2d(11e8, 6e8), 6e24, 6.37e6),
-        Planet(Vector2d(15e8, 15e8), 6e24, 6.37e6),
+        Planet(Vector2d(10, 10), 100, 2),
+        Planet(Vector2d(25, 60), 100, 2),
+        Planet(Vector2d(50, 90), 100, 2),
+        Planet(Vector2d(100, 100), 100, 2),
     ]
-    # m = Model(r, planets, 5_000, 10)
-    # m.estimate_path()
-    # m.save_path("test_paths/test_.path", overwrite=True)
-    m = Model("test_paths/test_.path", 10_000)
+    m = Model(r, planets, 5_000, 10)
     m.estimate_path()
-    m.save_path("test_paths/test_.path", overwrite=False)
+    m.save_path("test_paths/test_.path", overwrite=True)
+    # m = Model("test_paths/test_.path", 10_000)
+    # m.estimate_path()
+    # m.save_path("test_paths/test_.path", overwrite=False)
