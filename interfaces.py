@@ -5,7 +5,7 @@ from math import sqrt
 
 
 G = 6.6674e-11
-BASE_ANIMATION_STEPS = 100
+BASE_ANIMATION_STEPS = 10
 
 
 class Vector2d:
