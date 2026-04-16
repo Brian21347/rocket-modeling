@@ -2,11 +2,29 @@
 \usepackage{graphicx} %for images
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{bm}
 \usepackage[margin=1in]{geometry}
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{animate}
 
-\title{Modeling Travel in Gravitational FieldsModeling Travel in Gravitational Fields}
+
+\usepackage{minted}
+\definecolor{codebg}{RGB}{243, 243, 243}
+
+\newminted{python} {
+    style=tango,
+    bgcolor=codebg,
+    linenos,
+    fontsize=\small,
+    breaklines
+}
+\setlength{\parindent}{0pt}
+
+\renewcommand{\refname}{}
+
+
+\title{Modeling Travel in Gravitational Fields}
 \author{Brian Zhou, Minh Nguyen, James Overcash} 
 \date{April 2026}
 
@@ -14,128 +32,240 @@
 
 \maketitle
 
+\section{Conventions}
+A variable is bolded if and only if it is a vector variable. The multiplication of two scalars $a$ and $b$ is always represented implicitly as $ab$ while the scaling of a vector $\bm{v}$ by a scalar $k$ is always represented explicitly as $k \cdot \bm{v}$. Newton's notation is used for all derivatives with respect to time, and Leibniz's notation is used for all derivatives with respect to other quantities.
+
 \section{Introduction}
-A rocket with some known initial position $p_0$, velocity $v_0$, and mass $M$ is traveling through space heading in the direction of $v_0$. The object is propelled by thrusters with thrust $f_t$ and exhaust speed $v_t$. In space lie $N$ planets with fixed positions $p_1, p_2, \dots, p_N$ and known masses $m_1, m_2, \dots, m_N$  whose gravity influences the object's motion. Can we determine whether the rocket will ever land on a target planet?
+We consider a rocket with a single rear-mounted thruster traveling through space. The rocket body is modeled as a uniformly dense rod of negligible thickness with length $L$ meters and mass $m_b$ kilograms, and it carries an additional $m_f$ kilograms of fuel. The thruster consumes fuel at a constant rate of $s_f$ kilograms per second and, while fuel remains, produces a constant thrust force of $T$ Newtons in the direction opposite to the rocket's vector-orientation.\\
+
+The rocket moves in a two-dimensional planar space containing $N$ uniformly dense circular planets. The planets have fixed positions $\bm{p}_1,\bm{p}_2, \dots, \bm{p}_N$, masses $m_1, m_2, \dots, m_N$, and radii $r_1, r_2, \dots, r_N$. The mass of each planet exerts a gravitational force that affects the rocket's motion.\\
+
+Given the rocket's initial position $\bm{p}_0$, velocity $\bm{v}_0$, and angle-orientation $\theta_0$ (measured counter-clockwise from the $x$-axis), we model its trajectory under the combined effects of planetary gravity and thrust using the Euler-Cromer method.
 
 \section{Analysis}
-We model the scenario using classical Newtonian mechanics. We consider the rocket and planets to all be point-masses. Thus, according to Newton's second law, the acceleration $a$ of the object can be related to the net force exerted on the rocket $F_{\text{net}}$ by the equation
+Let $\bm{p}(t), \bm{v}(t), \theta(t), $ and $m(t)$ denote the position, velocity, angle-orientation, and mass, respectively, of the rocket at time $t$. Additionally, define $\bm{u}(t) = (\cos\theta(t), \sin\theta(t))$ to describe the vector-orientation of the rocket at time $t$. We will model the rocket's path using classical Newtonian mechanics. Thus, the linear acceleration $\ddot{\bm{p}}(t)$ and linear velocity $\dot{\bm{p}}(t)$ can be related to the net force exerted on the rocket $\bm{F}_\text{net}(t)$ by Newton's second law 
 \[
-\vec{F_{\text{net}}} = m \vec{a}.
+\bm{F}_{\text{net}}(t) = m(t) \cdot \ddot{\bm{p}}(t) + \dot{m}(t) \cdot \dot{\bm{p}}(t). \qquad\cite{newtons-laws-of-motion}
 \]
-We will also assume that space is a perfect vacuum. Thus, the rocket only experiences a gravitational force due to the planets and a thrust force due to it's thruster. According to Newton's law of universal gravitation (Neil Gehrels Swift Learning Center, n.d.), the $i$th gravitational force $F_i$ on the rocket due to the $i$th planet is of the form
-\[
-\vec{F_i}(t) = G\frac{M m_i}{\lvert \vec{p(t)} - \vec{p_i} \rvert^3}(\vec{p(t)} - \vec{p_i}),
-\]
-where $G \approx 6.674 \times 10^{-11}$ is Newton's gravitational constant.
-
-The non-linear system is that of the gravitational acceleration. $\vec{F}$ is the force on the object by a mass $m_1$ where the displacement between them is $\vec{r}$. 
+Since the thruster consumes fuel at a constant rate as long as there is fuel remaining, there exists a time $t_e$ where the rocket runs out of fuel and thus no longer experiences a thrust force. By elementary algebra,
 \begin{align*}
-          F &= G\frac{m \cdot m_1}{ |\vec{r}| ^ 2} \cdot \hat{r} \\ 
-    \vec{a} &= G_x\frac{m_1}{|\vec{r}|^3} \cdot \vec{r} \\
-    \begin{pmatrix} x'' \\ y'' \end{pmatrix} &= \begin{pmatrix}G\frac{}{}\end{pmatrix}
+t_e &= \frac{m_f}{s_f}\\
+m(t) &= \begin{cases}
+    m_b + m_f - s_ft & \text{if } t < t_e\\
+    m_b & \text{otherwise}
+\end{cases}\\
+\dot{m}(t) &= \begin{cases}
+    -s_f & \text{if } t < t_e\\
+    0 & \text{otherwise}
+\end{cases}
+\end{align*}
+Similarly, if we let $\bm{F}_T(t)$ describe the thrust force applied to the rocket at time $t$, it follows that
+\[
+\bm{F}_T(t) = \begin{cases}
+    -T \cdot \bm{u}(t) & \text{if } t < t_e\\
+    0 & \text{otherwise}
+\end{cases}
+\]
+And if we let $\bm{F}_G(t)$ describe the net gravitational force applied to the rocket at time $t$ and $\bm{F}_{G_i}(t)$ describe the specific gravitational force applied to the rocket due to the $i$th planet at time $t$, then it follows that
+\[
+\bm{F}_G(t) = \sum_{i=1}^{N}\bm{F}_{G_i}(t).
+\]
+Using Newton's law of universal gravitation \cite{gehrels}, we can expand these definitions
+\begin{align*}
+\bm{F}_{G_i}(t) &= \frac{Gm(t)m_i}{\lvert \bm{p}(t) - \bm{p}_i \rvert^3} \cdot (\bm{p}(t) - \bm{p}_i)\\
+\therefore \bm{F}_G(t) &= Gm(t)\sum_{i=1}^{N}\frac{m_i}{\lvert \bm{p}(t) - \bm{p}_i \rvert^3} \cdot (\bm{p}(t) - \bm{p}_i)
+\end{align*}
+where $G \approx 6.674 \times 10^{-11}$ is Newton's gravitational constant. Since gravity and thrust are the only forces acting upon the rocket,
+\[
+\bm{F}_\text{net}(t) = \bm{F}_T(t) + \bm{F}_G(t)
+\]
+which we can use to isolate the linear acceleration $\ddot{\bm{p}}(t)$
+\begin{align*}
+m(t) \cdot \ddot{\bm{p}}(t) + \dot{m}(t) \cdot \dot{\bm{p}}(t) &= \bm{F}_T(t) + \bm{F}_G(t) \\
+\ddot{\bm{p}}(t) &= \frac{1}{m(t)} \cdot \bm{F}_T(t) + \frac{1}{m(t)} \cdot \bm{F}_G(t) - \frac{\dot{m}(t)}{m(t)} \cdot \dot{\bm{p}}(t).
+\end{align*}
+% Converting the second-order differential equation into a system of first-order ones, we have
+
+% \begin{align*}
+% \dot{\bm{x}} &= \dot{\bm{p}} \\
+% \dot{\bm{v}} &= \ddot{\bm{p}} = \frac{\bm{F}_T(t)}{m(t)} + G\sum_{i=1}^{N}\frac{m_i}{\lvert \bm{p}(t) - \bm{p}_i \rvert^3} \cdot (\bm{p}(t) - \bm{p}_i) - \frac{\dot{m}(t)}{m(t)} \cdot \dot{\bm{p}}(t)
+% \end{align*}
+
+The Euler-Cromer method can be applied to systems of differential equations of the form
+\begin{align*}
+    \bm{\dot{x}} &= f(t, v) \\
+    \bm{\dot{v}} &= g(t, x)
+\end{align*}
+where $\bm{x}$ and $\bm{v}$ respectively represent position and velocity, making it applicable for our model. The Euler-Cromer method approximates a discrete solution by iterating using the following equations
+\begin{align*}
+    \bm{v}_{n+1} &= \bm{v}_n + \bm{a}(x_n, t_n)\Delta t \\
+    \bm{x}_{n+1} &= \bm{x}_{n} + \bm{v}_{n+1}\Delta t
+\end{align*}
+where $\Delta t$ is the time step; $v_n, x_n$ represent velocity and position after $n$ time steps; and $\bm{a}$ represents the acceleration function. \\
+
+The difference between the Euler-Cromer method and the standard Euler method is that it uses $v_{n+1}$ to solve for $x_{n+1}$ instead of $v_n$. This difference means energy nearly completely conserved within the system when applying this method, whereas energy tends to continually increase when applying the standard Euler method.\cite{euler} So, the Euler-Cromer method is more accurate than the standard Euler method for this application. \\
+
+Thus, we will be finding an approximate solution using
+\begin{align*}
+    \dot{\bm{p}}_{n+1} &= \dot{\bm{p}}_n + \left(
+    \frac{\bm{F}_T(t)}{m(t)} + G\sum_{i=1}^{N}\frac{m_i}{\lvert \bm{p}_n - \bm{p}_i \rvert^3} \cdot (\bm{p}_n - \bm{p}_i) - \frac{\dot{m}(t)}{m(t)} \cdot \dot{\bm{p}}_n \right)\Delta t \\
+    \bm{p}_{n+1} &= \bm{p}_{n} + \dot{\bm{p}}_{n+1}\Delta t.
 \end{align*}
 
+\vspace{1cm}
 
 
+Furthermore, since the rocket is not a point mass, it experiences a torque about its center of mass due to the gravitational forces acting upon it. Since the rocket and planets exist in a two-dimensional planar space, all rotation occurs about a single axis perpendicular to the plane of the space. Therefore, the rotational acceleration $\ddot{\theta}(t)$ can be related to the net torque exerted on the rocket $\tau_\text{net}(t)$ by Newton's second law for rotation 
+\[
+\tau_\text{net}(t) = I(t)\ddot{\theta}(t) \qquad\cite{openstax-newtons-second-law-of-rotation}
+\]
+where $I(t)$ denotes the moment of inertia of the rocket at time $t$. Since the rocket is a uniformly dense rod with negligible thickness rotating about its center of mass, $I(t)$ is given by
+\[
+I(t)=\frac{1}{12}m(t)L^2. \qquad\cite{hyperphysics-rod-inertia-formula}
+\]
+(We will continue with the angular portion of the simulation in the final draft.)
+
+\section{Reality Check}
+We chose to use the following system to model using the Python code in the appendices as a reality check.
+\begin{pythoncode}
+r = Rocket(Vector2d(0, 0), Vector2d(sqrt(10 * G), 0), 100)
+planets = [
+    Planet(Vector2d(10, 10), 100, 2),
+    Planet(Vector2d(25, 60), 100, 2),
+    Planet(Vector2d(50, 90), 100, 2),
+    Planet(Vector2d(100, 100), 100, 2),
+]
+\end{pythoncode}
+The following animation was generated to visualize the trajectory of the rocket. The black circle represents a point-mass rocket, the light gray circles represent the planets, and the multicolor curve represents the trajectory of the rocket. The animation will only play when opening this file using Adobe Acrobat or PDF viewers with similar capabilities. The link below the image links to a higher-quality version of the same animation which does not require specific viewing applications to play.\\
+
+\textbf{Figure 1}\\
+\textit{Reality check on a four-planet system}
+\begin{center}
+    \animategraphics[loop,autoplay,width=0.5\textwidth]{12}{test/image-}{1}{121}
+    \url{https://github.com/Brian21347/rocket-modeling/blob/main/animations/animation.gif}
+\end{center}
 
 \section{Conclusion}
-We use Euler's method to quickly simulate paths using the Python code attached in the appendix. 
-We find that some limitations of the computational approach includes: we cannot guarantee that the rocket will not eventually land on a planet, we cannot guarantee the path found is the optimal path.
+We expanded upon Euler's method of approximating solutions to differential equations learned in the course to model the trajectory of an ideal rocket in a system of four planets via the Euler-Cromer method. As the Euler-Cromer method is first-order accurate, one limitation is that the time steps must be incredibly small for high accuracy simulations and will require more computational power than the Runge-Kutta method to achieve the same accuracy. One possible extension of the project would be to consider the rocket and planets as inhabiting a three-dimensional space instead of a two-dimensional one, where rotation would naturally get more complex and will involve the tensor definition of the moment of inertia.
+
 \section{References}
-Result in Figure 1 were obtained using a Python script provided in Appendix 1
+Results in Figure 1 were obtained using a Python script provided in Appendix 1.
+
+\vspace{-1cm}
+
 \begin{thebibliography}{99}
-\bibitem{golbeck2015}
-Neil Gehrels Swift Learning Center. (n.d.). Imagine.gsfc.nasa.gov. \url{https://imagine.gsfc.nasa.gov/observatories/learning/swift/classroom/law_grav_derivation.html}
+
+\bibitem{gehrels}
+Gehrels, N. (n.d.). Newton’s law of gravitation derivation. NASA. \url{https://imagine.gsfc.nasa.gov/observatories/learning/swift/classroom/law_grav_derivation.html}
+\bibitem{newtons-laws-of-motion}
+Newton’s laws of motion. (2026). In Wikipedia. \url{https://en.wikipedia.org/w/index.php?title=Newton%27s_laws_of_motion&oldid=1336713731}
+\bibitem{euler}
+Semi-implicit Euler method. (2026). In Wikipedia. \url{https://en.wikipedia.org/w/index.php?title=Semi-implicit_Euler_method&oldid=1333480764}
+\bibitem{openstax-newtons-second-law-of-rotation}
+Moebs, W., Ling, S. J., \& Sanny, J. \textit{Newton’s Second Law for Rotation}. University Physics Volume 1, OpenStax. 
+\url{https://openstax.org/books/university-physics-volume-1/pages/10-7-newtons-second-law-for-rotation}
+\bibitem{hyperphysics-rod-inertia-formula}
+Nave, R. \textit{Moments of Inertia for Common Shapes}. HyperPhysics, Georgia State University. 
+\url{http://hyperphysics.phy-astr.gsu.edu/hbase/mi2.html}
 \end{thebibliography}
 
 
+
 \section{Appendices}
-`model.py` contains the code modeling the trajectory of the rocket:
-\begin{lstlisting}[language=Python]
+\subsection{model.py}
+This file contains the code modeling the trajectory of the rocket.
+% \begin{lstlisting}[style=python]
+\begin{pythoncode}
 from interfaces import *
 import tqdm
-from os.path import join
-import datetime
+
 
 class Model:
-    def __init__(self, rocket: Rocket, 
-                 planets: Sequence[Planet], 
-                 simulation_seconds: int = 1000 * 3600, 
-                 dt: int = 10):
+    def __init__(
+        self,
+        rocket: Rocket,
+        planets: Sequence[Planet],
+        simulation_hours: int,
+        dt: int,
+    ) -> None:
         self.rocket = rocket
         self.planets = planets
+        self.simulation_seconds = simulation_hours
+        self.dt = dt
         self.path = []
-        self.simulation_seconds = simulation_seconds
-        self.dt = dt  # units: seconds
 
-    def save_path(self, path: str | None = None):
-        SAVE_PATH = "paths"
+    def crash_checking(self) -> Planet | None:
+        for planet in self.planets:
+            if (
+                abs(self.rocket.position.x - planet.position.x)
+                + abs(self.rocket.position.y - planet.position.y)
+                > planet.radius
+            ):
+                continue
+            dist = self.rocket.position.dist(planet.position)
+            if dist <= planet.radius:
+                return planet
+        return None
 
-        if not self.path:
-            raise ValueError("Path not created")
-
-        now = datetime.datetime.now()
-        if path is None:
-            path = join(SAVE_PATH, f"{now.month}_{now.day}_{now.hour}_{now.minute}_{now.second}.path")
-
-        with open(path, mode="w") as f:
-            f.write(str(self.dt) + "\n")
-            f.write(str(len(self.planets)) + "\n")
-            for planet in self.planets:
-                f.write(str(planet) + "\n")
-            for position in self.path:
-                f.write(str(position) + "\n")
-
-    def estimate_path(self):
-        for _ in tqdm.tqdm(range(self.simulation_seconds//self.dt)):
-            self.rocket.velocity += self.calc_force() / self.rocket.mass_ship * self.dt
-            self.rocket.position += self.rocket.velocity * self.dt
-            self.path.append(self.rocket.position)
-
-    def estimate_path_with_mass_update(self):
-        for _ in tqdm.tqdm(range(self.simulation_seconds//self.dt)):
-            thrust = Vector2d(0,0)
-            if self.rocket.mass_fuel > 0:
+    def estimate_path(self) -> Planet | None:
+        dmassfuel = -self.rocket.thrust.mag() / self.rocket.speed_fuel * self.dt
+        self.path.append(self.rocket.position)
+        for _ in tqdm.tqdm(range(self.simulation_seconds // self.dt)):
+            if self.rocket.mass_fuel == 0:
+                thrust = Vector2d(0, 0)
+            elif self.rocket.mass_fuel + dmassfuel < 0:
+                thrust_percent = self.rocket.mass_fuel / -dmassfuel
+                thrust = self.rocket.thrust * thrust_percent
+                self.rocket.mass_fuel = 0
+            else:
                 thrust = self.rocket.thrust
-                """
-                dM * speed_fuel - M dV = 0
-                since thurst = | M dV/dt |
-                dM * speed_fuel = | thurst | * dt
-                """
-                dmassfuel = - thrust.mag() / self.rocket.speed_fuel * self.dt
                 self.rocket.mass_fuel += dmassfuel
 
-            self.rocket.velocity += (self.calc_force() + self.rocket.thrust) / (self.rocket.mass_ship + self.rocket.mass_fuel) * self.dt
+            rocket_mass = self.rocket.mass_fuel + self.rocket.mass_ship
+            self.rocket.velocity += (
+                thrust / rocket_mass
+                + self.calc_force()
+                - dmassfuel / rocket_mass * self.rocket.velocity
+            ) * self.dt
             self.rocket.position += self.rocket.velocity * self.dt
             self.path.append(self.rocket.position)
+            if (crash_dest := self.crash_checking()) != None:
+                return crash_dest
 
     def calc_force(self) -> Vector2d:
         force = Vector2d([0, 0])
         for planet in self.planets:
-            dist = max(self.rocket.position.dist(planet.position), 1e-3)
-            magnitude = G * self.rocket.mass_ship * planet.mass / dist**3
-            force += (planet.position - self.rocket.position) * magnitude
-        return force
+            dist = self.rocket.position.dist(planet.position)
+            force += (planet.position - self.rocket.position) * planet.mass / dist**3
+        return G * force
 
+\end{pythoncode}
 
-if __name__ == "__main__":
-    r = Rocket(Vector2d(0, 0), 100, Vector2d(0, sqrt(10 * G)))
-    planets = [
-        Planet(Vector2d(10, 10), 100, 10),
-        Planet(Vector2d(0, 10), 100, 10),
-        Planet(Vector2d(10, 0), 100, 10),
-    ]
-    m = Model(r, planets)
-    m.estimate_path()
-    m.save_path()
-\end{lstlisting}
-
-`interfaces.py` contain the interfaces used in `model.py`:
-\begin{lstlisting}
+\subsection{interfaces.py}
+This file contains the interfaces used in model.py.
+\begin{pythoncode}
 from dataclasses import dataclass
 from typing import overload
 from collections.abc import Sequence, Callable
 from math import sqrt
+
+
+@dataclass
+class Rocket:
+    position: Vector2d
+    mass_ship: float
+    velocity: Vector2d
+
+    mass_fuel: float = 0
+    speed_fuel: float = 0
+    thrust: Vector2d = Vector2d(0, 0)
+
+
+@dataclass
+class Planet:
+    position: Vector2d
+    mass: float
+    radius: float = 0
 
 
 class Vector2d:
@@ -155,66 +285,58 @@ class Vector2d:
         elif len(args) == 2:
             self.pos = args
 
-    def dist(self, other: "Vector2d"):
+    def dist(self, other: 'Vector2d'):
         return sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
-
     def mag(self):
         return sqrt(self.x ** 2 + self.y ** 2)
-
     @property
     def x(self):
         return self.pos[0]
-    
     @x.setter
     def x(self, val: float):
         self.pos = val, self.pos[1]
-
     @property
     def y(self):
         return self.pos[1]
-
     @y.setter
     def y(self, val: float):
         self.pos = self.pos[0], val
-
     def __str__(self) -> str:
-        return f"{self.x} {self.y}"
-
-    def __add__(self, other: "Vector2d"):
+        return f'{self.x} {self.y}'
+    def __add__(self, other: 'Vector2d'):
         return Vector2d(self.x + other.x, self.y + other.y)
-
-    def __sub__(self, other: "Vector2d"):
+    def __sub__(self, other: 'Vector2d'):
         return Vector2d(self.x - other.x, self.y - other.y)
-
     def __mul__(self, other: float):
         return Vector2d(self.x * other, self.y * other)
-
     def __rmul__(self, other: float):
         return self * other
-
     def __truediv__(self, other: float):
         return Vector2d(self.x / other, self.y / other)
+\end{pythoncode}
 
-
-@dataclass
-class Rocket:
-    position: Vector2d
-    mass_ship: float
-    velocity: Vector2d
-
-    mass_fuel: float = 0
-    speed_fuel: float = 0
-    thrust: Vector2d = Vector2d(0, 0)
-
-
-@dataclass
-class Planet:
-    position: Vector2d
-    mass: float
-    radius: float = 0
-\end{lstlisting}
-
-
-\section{Websites}
-
+\iffalse
+Next, we calculate the thrust force $\bm{F}_T$ of the rocket. We assume that the rocket ejects fuel at a constant rate $\frac{dm}{dt}$ with a constant exhaust speed $\lvert \bm{v}_e \rvert$. Therefore, according to the Tsiolkovsky rocket equation, $\bm{F}_T$ is of the form
+\begin{align*}
+    \bm{F}_T(t) &= \frac{dm}{dt} \cdot \bm{v}_e\\
+\end{align*}
+\fi
+\iffalse
+    This suggests the thrust force of the rocket expressed as a function of time is:
+    \[
+    \bm{F}_T(t) = \begin{cases}
+        \bm{T} & \text{if } t \leq t_b \\
+        \bm{0} & \text{if } t > t_b
+    \end{cases}
+    \]
+    
+    Then, the equation is
+    \[
+    F(t)= \begin{cases}
+    GM\sum\limits_{i=1}^{N}\frac{m_i}{\lvert \bm{p}(t) - \bm{p}_i \rvert^3} \cdot (\bm{p}(t) - \bm{p}_i) + \bm{T} & \text{if } t \leq t_b \\
+    GM\sum\limits_{i=1}^{N}\frac{m_i}{\lvert \bm{p}(t) - \bm{p}_i \rvert^3} \cdot (\bm{p}(t) - \bm{p}_i) & \text{if } t > t_b
+    \end{cases}
+    \]
+\fi
 \end{document}
+
