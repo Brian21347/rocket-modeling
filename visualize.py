@@ -48,7 +48,6 @@ class Visualize:
         y_span = self.max_points.y - self.offset.y
         self.pos = self.path[0]
         self.multi = min(self.screen_size.x / x_span, self.screen_size.y / y_span)
-        print(self.multi)
         self.offset *= self.multi
         self.path = [point * self.multi for point in self.path]
         self.planets = [
@@ -88,8 +87,8 @@ class Visualize:
                         self.time_i = 0
                         self.step_size = 0
                     elif event.key == pygame.K_RIGHT:
-                        self.time_i = len(self.path) - 1
-                        self.step_size = 0
+                        self.time_i = 0
+                        self.step_size = len(self.path) - 10
             self.draw()
             self.clock.tick(self.FRAME_RATE)
 
@@ -144,7 +143,7 @@ class Visualize:
                 (planet.position - self.offset).pos,
                 max(planet.radius, 2),
             )
-    
+
     def draw_path(self, high_fidelity):
         try:
             n_pos = next(self.gen)
@@ -170,16 +169,41 @@ class Visualize:
             self.pos = n_pos
         except StopIteration:
             self.gen = self.time_step()
-    
+
     def draw_grid(self):
         AXIS_COLOR = "black"
-        MAJOR_TIC_SIZE = 100
+        MAJOR_TIC_SIZE = 25 * self.multi
+        print(MAJOR_TIC_SIZE)
         MAJOR_TIC_COLOR = "#999999"
-        MINOR_TIC_SIZE = 25
-        MINOR_TIC_COLOR = "#E0E0E0"
-        pygame.draw.line(self.path_drawing, AXIS_COLOR, (self.offset.x, 0), (self.offset.x, self.screen_size.y))
-        pygame.draw.line(self.path_drawing, AXIS_COLOR, (0, self.offset.y), (self.screen_size.x, self.offset.y))
 
+        MINOR_TIC_SIZE = 5 * self.multi
+        MINOR_TIC_COLOR = "#E0E0E0"
+
+        # hacky way of doing things
+        x = -self.offset.x % MINOR_TIC_SIZE
+        while x < self.screen_size.x:
+            pygame.draw.line(self.path_drawing, MINOR_TIC_COLOR, (x, 0), (x, self.screen_size.y))
+            x += MINOR_TIC_SIZE
+        y = -self.offset.y % MINOR_TIC_SIZE
+        while y < self.screen_size.y:
+            pygame.draw.line(self.path_drawing, MINOR_TIC_COLOR, (0, y), (self.screen_size.x, y))
+            y += MINOR_TIC_SIZE
+
+        x = -self.offset.x % MAJOR_TIC_SIZE
+        while x < self.screen_size.x:
+            pygame.draw.line(self.path_drawing, MAJOR_TIC_COLOR, (x, 0), (x, self.screen_size.y))
+            x += MAJOR_TIC_SIZE
+        y = -self.offset.y % MAJOR_TIC_SIZE
+        while y < self.screen_size.y:
+            pygame.draw.line(self.path_drawing, MAJOR_TIC_COLOR, (0, y), (self.screen_size.x, y))
+            y += MAJOR_TIC_SIZE
+
+        pygame.draw.line(
+            self.path_drawing, AXIS_COLOR, (-self.offset.x, 0), (-self.offset.x, self.screen_size.y)
+        )
+        pygame.draw.line(
+            self.path_drawing, AXIS_COLOR, (0, -self.offset.y), (self.screen_size.x, -self.offset.y)
+        )
 
     def draw(self, high_fidelity=False):
         self.draw_path(high_fidelity)

@@ -98,16 +98,17 @@ class Model:
 
     def estimate_path(self) -> Planet | None:
         dmassfuel = -self.rocket.thrust.mag() / self.rocket.speed_fuel * self.dt
-        print(dmassfuel)
         prev = 0
         self.path.append(self.rocket.position)
         for iteration in tqdm.tqdm(range(self.simulation_seconds // self.dt)):
             if self.rocket.mass_fuel == 0:
                 thrust = Vector2d(0, 0)
+                dmassfuel = 0
             elif self.rocket.mass_fuel + dmassfuel < 0:
                 thrust_percent = self.rocket.mass_fuel / -dmassfuel
                 thrust = self.rocket.thrust * thrust_percent
                 self.rocket.mass_fuel = 0
+                dmassfuel = 0
             else:
                 thrust = self.rocket.thrust
                 self.rocket.mass_fuel += dmassfuel
@@ -138,19 +139,20 @@ class Model:
 
 
 if __name__ == "__main__":
-    angle = -pi / 8
-    x, y = cos(angle), sin(angle)
-    speed = sqrt(10 * G)
-    r = Rocket(Vector2d(0, 0), Vector2d(speed * x, speed * y), 100, 10, 1e-7, Vector2d(1e-9, 0))
-    planets = [
-        Planet(Vector2d(10, 10), 100, 2),
-        Planet(Vector2d(25, 60), 100, 2),
-        Planet(Vector2d(50, 90), 100, 2),
-        Planet(Vector2d(100, 100), 100, 2),
-    ]
-    m = Model(r, planets, 5_000, 10)
-    m.estimate_path()
-    m.save_path("test_paths/test_.path", overwrite=True)
-    # m = Model("test_paths/test_.path", 10_000)
+    # angle = -pi / 8
+    # x, y = cos(angle), sin(angle)
+    # speed = sqrt(10 * G)
+    # r = Rocket(Vector2d(0, 0), Vector2d(speed * x, speed * y), 100, 1, 1e-6, Vector2d(1e-10, 0))
+    # planets = [
+    #     Planet(Vector2d(10, 10), 100, 2),
+    #     Planet(Vector2d(25, 60), 100, 2),
+    #     Planet(Vector2d(50, 90), 100, 2),
+    #     Planet(Vector2d(100, 100), 100, 2),
+    # ]
+    # m = Model(r, planets, 5_000, 10)
     # m.estimate_path()
-    # m.save_path("test_paths/test_.path", overwrite=False)
+    # m.save_path("test_paths/test_.path", overwrite=True)
+
+    m = Model("test_paths/test_.path", 25_000)
+    m.estimate_path()
+    m.save_path("test_paths/test_.path", overwrite=False)
