@@ -115,9 +115,9 @@ class Visualize:
             images.append(image)
 
         print("Saving animation...")
-        if not save_as_frames:
-            images[0].save(save_path, save_all=True, append_images=images[1:], duration=50)
-            return
+        # if not save_as_frames:
+        #     images[0].save(save_path, save_all=True, append_images=images[1:], duration=50)
+        #     return
         for i, image in enumerate(images):
             image.save(join(save_path, f"image-{i}.png"))
 
@@ -215,5 +215,5 @@ class Visualize:
 if __name__ == "__main__":
     v = Visualize(join("test_paths", "test2.path"))
     # v.run()
-    v.save_animation(join("animations", "test.gif"))
+    # v.save_animation(join("animations", "test.gif"))
     v.save_animation("animation_frames", save_as_frames=True)

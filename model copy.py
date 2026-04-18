@@ -31,18 +31,20 @@ class Model:
 
     def estimate_path(self) -> Planet | None:
         dmassfuel = -self.rocket.thrust.mag() / self.rocket.speed_fuel * self.dt
+        prev = 0
         self.path.append(self.rocket.position)
-        for _ in tqdm.tqdm(range(self.simulation_seconds // self.dt)):
+        for iteration in tqdm.tqdm(range(self.simulation_seconds // self.dt)):
             if self.rocket.mass_fuel == 0:
                 thrust = Vector2d(0, 0)
+                dmassfuel = 0
             elif self.rocket.mass_fuel + dmassfuel < 0:
                 thrust_percent = self.rocket.mass_fuel / -dmassfuel
                 thrust = self.rocket.thrust * thrust_percent
                 self.rocket.mass_fuel = 0
+                dmassfuel = 0
             else:
                 thrust = self.rocket.thrust
                 self.rocket.mass_fuel += dmassfuel
-
             rocket_mass = self.rocket.mass_fuel + self.rocket.mass_ship
             self.rocket.velocity += (
                 thrust / rocket_mass
@@ -50,7 +52,9 @@ class Model:
                 - dmassfuel / rocket_mass * self.rocket.velocity
             ) * self.dt
             self.rocket.position += self.rocket.velocity * self.dt
-            self.path.append(self.rocket.position)
+            if iteration - prev == BASE_ANIMATION_STEPS:
+                self.path.append(self.rocket.position)
+                prev = iteration
             if (crash_dest := self.crash_checking()) != None:
                 return crash_dest
 
