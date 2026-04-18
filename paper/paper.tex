@@ -2,8 +2,9 @@
 \usepackage{graphicx} %for images
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{xcolor}
 \usepackage{bm}
+\usepackage{animate}
+\usepackage{xcolor}
 \usepackage[margin=1in]{geometry}
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
 \usepackage{animate}
@@ -33,21 +34,21 @@
 \maketitle
 
 \section{Conventions}
-A variable is bolded if and only if it is a vector variable. The multiplication of two scalars $a$ and $b$ is always represented implicitly as $ab$ while the scaling of a vector $\bm{v}$ by a scalar $k$ is always represented explicitly as $k \cdot \bm{v}$. Newton's notation is used for all derivatives with respect to time, and Leibniz's notation is used for all derivatives with respect to other quantities.
+Bolded variables are vectors. The multiplication of two scalars $a$ and $b$ is always represented implicitly as $ab$ while the scaling of a vector $\bm{v}$ by a scalar $k$ is always represented explicitly as $k \cdot \bm{v}$. Newton's notation is used for all derivatives with respect to time, and Leibniz's notation is used for all derivatives with respect to other quantities.
 
 \section{Introduction}
 We consider a rocket with a single rear-mounted thruster traveling through space. The rocket body is modeled as a uniformly dense rod of negligible thickness with length $L$ meters and mass $m_b$ kilograms, and it carries an additional $m_f$ kilograms of fuel. The thruster consumes fuel at a constant rate of $s_f$ kilograms per second and, while fuel remains, produces a constant thrust force of $T$ Newtons in the direction opposite to the rocket's vector-orientation.\\
 
-The rocket moves in a two-dimensional planar space containing $N$ uniformly dense circular planets. The planets have fixed positions $\bm{p}_1,\bm{p}_2, \dots, \bm{p}_N$, masses $m_1, m_2, \dots, m_N$, and radii $r_1, r_2, \dots, r_N$. The mass of each planet exerts a gravitational force that affects the rocket's motion.\\
+The rocket moves in a two-dimensional planar space containing $N$ uniformly dense circular planets. The planets have fixed positions $\bm{p}_1,\bm{p}_2, \dots, \bm{p}_N$, masses $m_1, m_2, \dots, m_N$, and radii $r_1, r_2, \dots, r_N$. The mass of each planet exerts a gravitational force affecting the rocket's motion.\\
 
-Given the rocket's initial position $\bm{p}_0$, velocity $\bm{v}_0$, and angle-orientation $\theta_0$ (measured counter-clockwise from the $x$-axis), we model its trajectory under the combined effects of planetary gravity and thrust using the Euler-Cromer method.
+Given the rocket's initial position $\bm{p}_0$, velocity $\bm{v}_0$, and angle-orientation $\theta_0$ (counter-clockwise from the $x$-axis), we model its trajectory under the combined effects of planetary gravity and thrust using the Euler-Cromer method.
 
 \section{Analysis}
 Let $\bm{p}(t), \bm{v}(t), \theta(t), $ and $m(t)$ denote the position, velocity, angle-orientation, and mass, respectively, of the rocket at time $t$. Additionally, define $\bm{u}(t) = (\cos\theta(t), \sin\theta(t))$ to describe the vector-orientation of the rocket at time $t$. We will model the rocket's path using classical Newtonian mechanics. Thus, the linear acceleration $\ddot{\bm{p}}(t)$ and linear velocity $\dot{\bm{p}}(t)$ can be related to the net force exerted on the rocket $\bm{F}_\text{net}(t)$ by Newton's second law 
 \[
 \bm{F}_{\text{net}}(t) = m(t) \cdot \ddot{\bm{p}}(t) + \dot{m}(t) \cdot \dot{\bm{p}}(t). \qquad\cite{newtons-laws-of-motion}
 \]
-Since the thruster consumes fuel at a constant rate as long as there is fuel remaining, there exists a time $t_e$ where the rocket runs out of fuel and thus no longer experiences a thrust force. By elementary algebra,
+Since the thruster consumes fuel at a constant rate as long as there is fuel, there exists a time $t_e$ where the rocket no longer experiences a thrust. Using algebra,
 \begin{align*}
 t_e &= \frac{m_f}{s_f}\\
 m(t) &= \begin{cases}
@@ -59,14 +60,14 @@ m(t) &= \begin{cases}
     0 & \text{otherwise}
 \end{cases}
 \end{align*}
-Similarly, if we let $\bm{F}_T(t)$ describe the thrust force applied to the rocket at time $t$, it follows that
+Similarly, if we let $\bm{F}_T(t)$ describe the thrust at time $t$, it follows that
 \[
 \bm{F}_T(t) = \begin{cases}
     -T \cdot \bm{u}(t) & \text{if } t < t_e\\
     0 & \text{otherwise}
 \end{cases}
 \]
-And if we let $\bm{F}_G(t)$ describe the net gravitational force applied to the rocket at time $t$ and $\bm{F}_{G_i}(t)$ describe the specific gravitational force applied to the rocket due to the $i$th planet at time $t$, then it follows that
+If we let $\bm{F}_G(t)$ describe the net gravitational force applied to the rocket at time $t$ and $\bm{F}_{G_i}(t)$ describe the specific gravitational force applied to the rocket due to the $i$th planet at time $t$, then it follows that
 \[
 \bm{F}_G(t) = \sum_{i=1}^{N}\bm{F}_{G_i}(t).
 \]
@@ -119,30 +120,30 @@ Furthermore, since the rocket is not a point mass, it experiences a torque about
 \[
 \tau_\text{net}(t) = I(t)\ddot{\theta}(t) \qquad\cite{openstax-newtons-second-law-of-rotation}
 \]
-where $I(t)$ denotes the moment of inertia of the rocket at time $t$. Since the rocket is a uniformly dense rod with negligible thickness rotating about its center of mass, $I(t)$ is given by
+where $I(t)$ denotes the moment of inertia of the rocket at time $t$. Modelling the rocket as a uniform rod with negligible thickness, its moment of inertia around the center is.
 \[
 I(t)=\frac{1}{12}m(t)L^2. \qquad\cite{hyperphysics-rod-inertia-formula}
 \]
 (We will continue with the angular portion of the simulation in the final draft.)
 
 \section{Reality Check}
-We chose to use the following system to model using the Python code in the appendices as a reality check.
-\begin{pythoncode}
-r = Rocket(Vector2d(0, 0), Vector2d(sqrt(10 * G), 0), 100)
-planets = [
-    Planet(Vector2d(10, 10), 100, 2),
-    Planet(Vector2d(25, 60), 100, 2),
-    Planet(Vector2d(50, 90), 100, 2),
-    Planet(Vector2d(100, 100), 100, 2),
-]
-\end{pythoncode}
-The following animation was generated to visualize the trajectory of the rocket. The black circle represents a point-mass rocket, the light gray circles represent the planets, and the multicolor curve represents the trajectory of the rocket. The animation will only play when opening this file using Adobe Acrobat or PDF viewers with similar capabilities. The link below the image links to a higher-quality version of the same animation which does not require specific viewing applications to play.\\
+Python code in the appendices will model this system for the reality check.
+% \begin{pythoncode}
+% r = Rocket(Vector2d(0, 0), Vector2d(sqrt(10 * G), 0), 100)
+% planets = [
+%     Planet(Vector2d(10, 10), 100, 2),
+%     Planet(Vector2d(25, 60), 100, 2),
+%     Planet(Vector2d(50, 90), 100, 2),
+%     Planet(Vector2d(100, 100), 100, 2),
+% ]
+% \end{pythoncode}
+The following animation visualizes the trajectory of the rocket. The black circle represents a point-mass rocket, the light gray circles represent the planets, and the multicolor curve represents the trajectory of the rocket. The animation will only play when opening this file using Adobe Acrobat or PDF viewers with similar capabilities. The link below the image links to a higher-quality version of the same animation which does not require specific viewing applications to play.\\
 
 \textbf{Figure 1}\\
 \textit{Reality check on a four-planet system}
 \begin{center}
-    \animategraphics[loop,autoplay,width=0.5\textwidth]{12}{test/image-}{1}{121}
-    \url{https://github.com/Brian21347/rocket-modeling/blob/main/animations/animation.gif}
+    % \animategraphics[loop,autoplay,width=0.5\textwidth]{12}{test/image-}{1}{121}
+    % \url{https://github.com/Brian21347/rocket-modeling/blob/main/animations/animation.gif}
 \end{center}
 
 \section{Conclusion}
@@ -175,145 +176,145 @@ Nave, R. \textit{Moments of Inertia for Common Shapes}. HyperPhysics, Georgia St
 \subsection{model.py}
 This file contains the code modeling the trajectory of the rocket.
 % \begin{lstlisting}[style=python]
-\begin{pythoncode}
-from interfaces import *
-import tqdm
+% \begin{pythoncode}
+% from interfaces import *
+% import tqdm
 
 
-class Model:
-    def __init__(
-        self,
-        rocket: Rocket,
-        planets: Sequence[Planet],
-        simulation_hours: int,
-        dt: int,
-    ) -> None:
-        self.rocket = rocket
-        self.planets = planets
-        self.simulation_seconds = simulation_hours
-        self.dt = dt
-        self.path = []
+% class Model:
+%     def __init__(
+%         self,
+%         rocket: Rocket,
+%         planets: Sequence[Planet],
+%         simulation_hours: int,
+%         dt: int,
+%     ) -> None:
+%         self.rocket = rocket
+%         self.planets = planets
+%         self.simulation_seconds = simulation_hours
+%         self.dt = dt
+%         self.path = []
 
-    def crash_checking(self) -> Planet | None:
-        for planet in self.planets:
-            if (
-                abs(self.rocket.position.x - planet.position.x)
-                + abs(self.rocket.position.y - planet.position.y)
-                > planet.radius
-            ):
-                continue
-            dist = self.rocket.position.dist(planet.position)
-            if dist <= planet.radius:
-                return planet
-        return None
+%     def crash_checking(self) -> Planet | None:
+%         for planet in self.planets:
+%             if (
+%                 abs(self.rocket.position.x - planet.position.x)
+%                 + abs(self.rocket.position.y - planet.position.y)
+%                 > planet.radius
+%             ):
+%                 continue
+%             dist = self.rocket.position.dist(planet.position)
+%             if dist <= planet.radius:
+%                 return planet
+%         return None
 
-    def estimate_path(self) -> Planet | None:
-        dmassfuel = -self.rocket.thrust.mag() / self.rocket.speed_fuel * self.dt
-        self.path.append(self.rocket.position)
-        for _ in tqdm.tqdm(range(self.simulation_seconds // self.dt)):
-            if self.rocket.mass_fuel == 0:
-                thrust = Vector2d(0, 0)
-            elif self.rocket.mass_fuel + dmassfuel < 0:
-                thrust_percent = self.rocket.mass_fuel / -dmassfuel
-                thrust = self.rocket.thrust * thrust_percent
-                self.rocket.mass_fuel = 0
-            else:
-                thrust = self.rocket.thrust
-                self.rocket.mass_fuel += dmassfuel
+%     def estimate_path(self) -> Planet | None:
+%         dmassfuel = -self.rocket.thrust.mag() / self.rocket.speed_fuel * self.dt
+%         self.path.append(self.rocket.position)
+%         for _ in tqdm.tqdm(range(self.simulation_seconds // self.dt)):
+%             if self.rocket.mass_fuel == 0:
+%                 thrust = Vector2d(0, 0)
+%             elif self.rocket.mass_fuel + dmassfuel < 0:
+%                 thrust_percent = self.rocket.mass_fuel / -dmassfuel
+%                 thrust = self.rocket.thrust * thrust_percent
+%                 self.rocket.mass_fuel = 0
+%             else:
+%                 thrust = self.rocket.thrust
+%                 self.rocket.mass_fuel += dmassfuel
 
-            rocket_mass = self.rocket.mass_fuel + self.rocket.mass_ship
-            self.rocket.velocity += (
-                thrust / rocket_mass
-                + self.calc_force()
-                - dmassfuel / rocket_mass * self.rocket.velocity
-            ) * self.dt
-            self.rocket.position += self.rocket.velocity * self.dt
-            self.path.append(self.rocket.position)
-            if (crash_dest := self.crash_checking()) != None:
-                return crash_dest
+%             rocket_mass = self.rocket.mass_fuel + self.rocket.mass_ship
+%             self.rocket.velocity += (
+%                 thrust / rocket_mass
+%                 + self.calc_force()
+%                 - dmassfuel / rocket_mass * self.rocket.velocity
+%             ) * self.dt
+%             self.rocket.position += self.rocket.velocity * self.dt
+%             self.path.append(self.rocket.position)
+%             if (crash_dest := self.crash_checking()) != None:
+%                 return crash_dest
 
-    def calc_force(self) -> Vector2d:
-        force = Vector2d([0, 0])
-        for planet in self.planets:
-            dist = self.rocket.position.dist(planet.position)
-            force += (planet.position - self.rocket.position) * planet.mass / dist**3
-        return G * force
+%     def calc_force(self) -> Vector2d:
+%         force = Vector2d([0, 0])
+%         for planet in self.planets:
+%             dist = self.rocket.position.dist(planet.position)
+%             force += (planet.position - self.rocket.position) * planet.mass / dist**3
+%         return G * force
 
-\end{pythoncode}
+% % \end{pythoncode}
 
-\subsection{interfaces.py}
-This file contains the interfaces used in model.py.
-\begin{pythoncode}
-from dataclasses import dataclass
-from typing import overload
-from collections.abc import Sequence, Callable
-from math import sqrt
-
-
-@dataclass
-class Rocket:
-    position: Vector2d
-    mass_ship: float
-    velocity: Vector2d
-
-    mass_fuel: float = 0
-    speed_fuel: float = 0
-    thrust: Vector2d = Vector2d(0, 0)
+% \subsection{interfaces.py}
+% This file contains the interfaces used in model.py.
+% \begin{pythoncode}
+% from dataclasses import dataclass
+% from typing import overload
+% from collections.abc import Sequence, Callable
+% from math import sqrt
 
 
-@dataclass
-class Planet:
-    position: Vector2d
-    mass: float
-    radius: float = 0
+% @dataclass
+% class Rocket:
+%     position: Vector2d
+%     mass_ship: float
+%     velocity: Vector2d
+
+%     mass_fuel: float = 0
+%     speed_fuel: float = 0
+%     thrust: Vector2d = Vector2d(0, 0)
 
 
-class Vector2d:
-    pos: tuple[float, float]
+% @dataclass
+% class Planet:
+%     position: Vector2d
+%     mass: float
+%     radius: float = 0
 
-    @overload
-    def __init__(self, x: float, y: float, /) -> None: ...
 
-    @overload
-    def __init__(self, pos: Sequence[float,], /) -> None: ...
+% class Vector2d:
+%     pos: tuple[float, float]
 
-    def __init__(self, *args) -> None:
-        if len(args) > 2:
-            raise ValueError()
-        if len(args) == 1:
-            self.pos = tuple(args[0])
-        elif len(args) == 2:
-            self.pos = args
+%     @overload
+%     def __init__(self, x: float, y: float, /) -> None: ...
 
-    def dist(self, other: 'Vector2d'):
-        return sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
-    def mag(self):
-        return sqrt(self.x ** 2 + self.y ** 2)
-    @property
-    def x(self):
-        return self.pos[0]
-    @x.setter
-    def x(self, val: float):
-        self.pos = val, self.pos[1]
-    @property
-    def y(self):
-        return self.pos[1]
-    @y.setter
-    def y(self, val: float):
-        self.pos = self.pos[0], val
-    def __str__(self) -> str:
-        return f'{self.x} {self.y}'
-    def __add__(self, other: 'Vector2d'):
-        return Vector2d(self.x + other.x, self.y + other.y)
-    def __sub__(self, other: 'Vector2d'):
-        return Vector2d(self.x - other.x, self.y - other.y)
-    def __mul__(self, other: float):
-        return Vector2d(self.x * other, self.y * other)
-    def __rmul__(self, other: float):
-        return self * other
-    def __truediv__(self, other: float):
-        return Vector2d(self.x / other, self.y / other)
-\end{pythoncode}
+%     @overload
+%     def __init__(self, pos: Sequence[float,], /) -> None: ...
+
+%     def __init__(self, *args) -> None:
+%         if len(args) > 2:
+%             raise ValueError()
+%         if len(args) == 1:
+%             self.pos = tuple(args[0])
+%         elif len(args) == 2:
+%             self.pos = args
+
+%     def dist(self, other: 'Vector2d'):
+%         return sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
+%     def mag(self):
+%         return sqrt(self.x ** 2 + self.y ** 2)
+%     @property
+%     def x(self):
+%         return self.pos[0]
+%     @x.setter
+%     def x(self, val: float):
+%         self.pos = val, self.pos[1]
+%     @property
+%     def y(self):
+%         return self.pos[1]
+%     @y.setter
+%     def y(self, val: float):
+%         self.pos = self.pos[0], val
+%     def __str__(self) -> str:
+%         return f'{self.x} {self.y}'
+%     def __add__(self, other: 'Vector2d'):
+%         return Vector2d(self.x + other.x, self.y + other.y)
+%     def __sub__(self, other: 'Vector2d'):
+%         return Vector2d(self.x - other.x, self.y - other.y)
+%     def __mul__(self, other: float):
+%         return Vector2d(self.x * other, self.y * other)
+%     def __rmul__(self, other: float):
+%         return self * other
+%     def __truediv__(self, other: float):
+%         return Vector2d(self.x / other, self.y / other)
+% \end{pythoncode}
 
 \iffalse
 Next, we calculate the thrust force $\bm{F}_T$ of the rocket. We assume that the rocket ejects fuel at a constant rate $\frac{dm}{dt}$ with a constant exhaust speed $\lvert \bm{v}_e \rvert$. Therefore, according to the Tsiolkovsky rocket equation, $\bm{F}_T$ is of the form
