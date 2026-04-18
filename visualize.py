@@ -97,7 +97,7 @@ class Visualize:
         If save_as_frames is true, then save_path is the directory where the animation frames are saved
         """
 
-        TIME_LIMIT = 10  # seconds
+        TIME_LIMIT = 20  # seconds
         # FPS = 60
         FPS = 12
         FRAMES = TIME_LIMIT * FPS
@@ -213,7 +213,7 @@ class Visualize:
 
 
 if __name__ == "__main__":
-    v = Visualize(join("test_paths", "test_.path"))
-    v.run()
-    # v.save_animation(join("animations", "test.gif"))
-    # v.save_animation("animation_frames", save_as_frames=True)
+    v = Visualize(join("test_paths", "test2.path"))
+    # v.run()
+    v.save_animation(join("animations", "test.gif"))
+    v.save_animation("animation_frames", save_as_frames=True)

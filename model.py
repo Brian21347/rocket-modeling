@@ -98,6 +98,7 @@ class Model:
 
     def estimate_path(self) -> Planet | None:
         dmassfuel = -self.rocket.thrust.mag() / self.rocket.speed_fuel * self.dt
+        print("dmassfuel:", dmassfuel)
         prev = 0
         self.path.append(self.rocket.position)
         for iteration in tqdm.tqdm(range(self.simulation_seconds // self.dt)):
@@ -112,7 +113,6 @@ class Model:
             else:
                 thrust = self.rocket.thrust
                 self.rocket.mass_fuel += dmassfuel
-
             rocket_mass = self.rocket.mass_fuel + self.rocket.mass_ship
             self.rocket.velocity += (
                 thrust / rocket_mass
@@ -139,20 +139,20 @@ class Model:
 
 
 if __name__ == "__main__":
-    # angle = -pi / 8
+    # angle = 0
     # x, y = cos(angle), sin(angle)
     # speed = sqrt(10 * G)
-    # r = Rocket(Vector2d(0, 0), Vector2d(speed * x, speed * y), 100, 1, 1e-6, Vector2d(1e-10, 0))
-    # planets = [
-    #     Planet(Vector2d(10, 10), 100, 2),
-    #     Planet(Vector2d(25, 60), 100, 2),
-    #     Planet(Vector2d(50, 90), 100, 2),
-    #     Planet(Vector2d(100, 100), 100, 2),
-    # ]
-    # m = Model(r, planets, 5_000, 10)
+    r = Rocket(Vector2d(0, 0), Vector2d(0, 0), 100, 100, 3e-7, Vector2d(1e-8, -1e-8))
+    planets = [
+        Planet(Vector2d(10, 10), 100, 2),
+        Planet(Vector2d(25, 60), 100, 2),
+        Planet(Vector2d(50, 90), 100, 2),
+        Planet(Vector2d(100, 100), 100, 2),
+    ]
+    # m = Model(r, planets, 2_000, 10)
     # m.estimate_path()
-    # m.save_path("test_paths/test_.path", overwrite=True)
+    # m.save_path("test_paths/test2.path", overwrite=True)
 
-    m = Model("test_paths/test_.path", 25_000)
+    m = Model("test_paths/test2.path", 2_000)
     m.estimate_path()
-    m.save_path("test_paths/test_.path", overwrite=False)
+    m.save_path("test_paths/test2.path", overwrite=False)
