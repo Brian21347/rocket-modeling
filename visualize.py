@@ -35,27 +35,33 @@ class Visualize:
                 self.max_points.y = max(planet.position.y, self.max_points.y)
                 self.planets.append(planet)
 
-            self.path = []
+            self.path: list[tuple[Vector2d, float]] = []
             while len(lines := f.readlines(LINES)) != 0:
+                line = ""
                 for line in lines:
-                    point = point_from_str(line)
+                    point, angle = point_from_str(line)
                     self.offset.x = min(point.x, self.offset.x)
                     self.max_points.x = max(point.x, self.max_points.x)
                     self.offset.y = min(point.y, self.offset.y)
                     self.max_points.y = max(point.y, self.max_points.y)
-                    self.path.append(point)
+                    self.path.append((point, angle))
+                if line.count(" ") != 1:
+                    self.rocket = rocket_from_str(line)
         x_span = self.max_points.x - self.offset.x
         y_span = self.max_points.y - self.offset.y
-        self.pos = self.path[0]
+        self.pos, self.angle = self.path[0]
         self.multi = min(self.screen_size.x / x_span, self.screen_size.y / y_span)
         self.offset *= self.multi
-        self.path = [point * self.multi for point in self.path]
+        self.path = [(point * self.multi, angle) for point, angle in self.path]
         self.planets = [
             Planet(planet.position * self.multi, planet.mass, planet.radius * self.multi)
             for planet in self.planets
         ]
+        self.rocket_surface = pygame.Surface((self.rocket.length * self.multi, 10 * self.multi), pygame.SRCALPHA)
+        self.rocket_surface.fill("black")
         self.draw_grid()
         self.draw_planets()
+    
 
     def time_step(self):
         while 0 <= self.time_i < len(self.path):
@@ -146,12 +152,12 @@ class Visualize:
 
     def draw_path(self, high_fidelity):
         try:
-            n_pos = next(self.gen)
+            n_pos, _angle = next(self.gen)
             if high_fidelity:
                 for i in range(self.time_i + 1, self.time_i + self.step_size):
                     if i == len(self.path):
                         break
-                    n_pos = self.path[i]
+                    n_pos, _angle = self.path[i]
                     pygame.draw.line(
                         self.path_drawing,
                         self.get_color(),
@@ -166,9 +172,13 @@ class Visualize:
                     (self.pos - self.offset).pos,
                     (n_pos - self.offset).pos,
                 )
-            self.pos = n_pos
+            self.pos: Vector2d = n_pos
         except StopIteration:
             self.gen = self.time_step()
+
+    def draw_rocket(self):
+        rotated = pygame.transform.rotate(self.rocket_surface, self.angle)
+        self.screen.blit(rotated, self.pos.pos)
 
     def draw_grid(self):
         AXIS_COLOR = "black"
@@ -208,7 +218,6 @@ class Visualize:
     def draw(self, high_fidelity=False):
         self.draw_path(high_fidelity)
         self.screen.blit(self.path_drawing, [0, 0])
-        pygame.draw.circle(self.screen, "black", (self.pos - self.offset).pos, 5)
         pygame.display.flip()
 
 

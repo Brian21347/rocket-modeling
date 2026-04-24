@@ -6,6 +6,7 @@ from math import sqrt
 
 G = 6.6674e-11
 BASE_ANIMATION_STEPS = 10
+NUM_ROCKET_MASS_POINTS = 5
 
 
 class Vector2d:
@@ -75,15 +76,17 @@ class Vector2d:
 @dataclass
 class Rocket:
     position: Vector2d
+    angle: float
     velocity: Vector2d
     mass_ship: float
 
     mass_fuel: float = 0
     speed_fuel: float = 0
-    thrust: Vector2d = Vector2d(0, 0)
+    thrust: float = 0
+    length: float = 0
 
     def __str__(self):
-        return f"{self.position} {self.velocity} {self.mass_ship} {self.mass_fuel} {self.speed_fuel} {self.thrust}"
+        return f"{self.position} {self.angle} {self.velocity} {self.mass_ship} {self.mass_fuel} {self.speed_fuel} {self.thrust} {self.length}"
 
 
 @dataclass
@@ -110,16 +113,18 @@ def planet_from_str(string: str):
     return Planet(position, mass, radius)
 
 
-def point_from_str(str: str):
+def point_from_str(str: str) -> tuple[Vector2d, float]:
     l = list(map(float, str.split()))
-    return Vector2d(l[0], l[1])
+    return Vector2d(l[0], l[1]), l[2]
 
 def rocket_from_str(str: str):
     l = list(map(float, str.split()))
     position = Vector2d(l[0], l[1])
-    velocity = Vector2d(l[2], l[3])
-    ship_mass = l[4]
-    fuel_mass = l[5]
-    fuel_speed = l[6]
-    thrust = Vector2d(l[7], l[8])
-    return Rocket(position, velocity, ship_mass, fuel_mass, fuel_speed, thrust)
+    angle = l[2]
+    velocity = Vector2d(l[3], l[4])
+    ship_mass = l[5]
+    fuel_mass = l[6]
+    fuel_speed = l[7]
+    thrust = l[8]
+    length = l[9]
+    return Rocket(position, angle, velocity, ship_mass, fuel_mass, fuel_speed, thrust, length)

@@ -24,12 +24,21 @@ class Model:
     def __init__(self, path: str, simulation_hours: int, /): ...
 
     def __init__(self, *args) -> None:
+        self.djs = [
+            (-1 / 2 + j / (NUM_ROCKET_MASS_POINTS - 1)) * self.rocket.length
+            for j in range(NUM_ROCKET_MASS_POINTS)
+        ]
+        self.mass_point_sum = sum(self.djs)
+        self.mass_point_squared_sum = self.mass_point_sum * self.rocket.length
+        d_mass = -self.rocket.thrust / self.rocket.speed_fuel * self.dt
+        self.d_rotational_inertia = d_mass / NUM_ROCKET_MASS_POINTS * self.mass_point_squared_sum
+        
         if len(args) == 4:
             self.rocket = args[0]
             self.planets = args[1]
             self.simulation_seconds = args[2] * 3_600
             self.dt = args[3]  # units: seconds
-            self.path = []
+            self.path: list[tuple[Vector2d, float]] = []
             return
         if len(args) == 2:
             path = args[0]
@@ -37,7 +46,7 @@ class Model:
                 raise FileNotFoundError(f"{path} not found")
             self.load_from_path(path)
             self.simulation_seconds = args[1] * 3_600
-            self.path = []
+            self.path: list[tuple[Vector2d, float]] = []
             return
         raise ValueError("Incorrect number of arguments provided")
 
@@ -80,7 +89,8 @@ class Model:
                     f.write(str(planet) + "\n")
         with open(path, mode="a") as f:
             for position in self.path[:-1:BASE_ANIMATION_STEPS]:
-                f.write(str(position) + "\n")
+                pos, angle = position
+                f.write(str(pos) + " " + str(angle) + "\n")
             f.write(str(self.rocket) + "\n")
 
     def crash_checking(self) -> Planet | None:
@@ -97,31 +107,32 @@ class Model:
         return None
 
     def estimate_path(self) -> Planet | None:
-        dmassfuel = -self.rocket.thrust.mag() / self.rocket.speed_fuel * self.dt
-        print("dmassfuel:", dmassfuel)
+        d_mass_fuel = -self.rocket.thrust / self.rocket.speed_fuel * self.dt
+        print("dmassfuel:", d_mass_fuel)
         prev = 0
-        self.path.append(self.rocket.position)
+        self.path.append((self.rocket.position, self.rocket.angle))
         for iteration in tqdm.tqdm(range(self.simulation_seconds // self.dt)):
             if self.rocket.mass_fuel == 0:
-                thrust = Vector2d(0, 0)
-                dmassfuel = 0
-            elif self.rocket.mass_fuel + dmassfuel < 0:
-                thrust_percent = self.rocket.mass_fuel / -dmassfuel
+                thrust = 0
+                d_mass_fuel = 0
+            elif self.rocket.mass_fuel + d_mass_fuel < 0:
+                thrust_percent = self.rocket.mass_fuel / -d_mass_fuel
                 thrust = self.rocket.thrust * thrust_percent
                 self.rocket.mass_fuel = 0
-                dmassfuel = 0
+                d_mass_fuel = 0
             else:
                 thrust = self.rocket.thrust
-                self.rocket.mass_fuel += dmassfuel
-            rocket_mass = self.rocket.mass_fuel + self.rocket.mass_ship
+                self.rocket.mass_fuel += d_mass_fuel
+            rocket_mass = self.rocket_mass
+            thrust_vec = Vector2d(cos(self.rocket.angle), sin(self.rocket.angle)) * thrust
             self.rocket.velocity += (
-                thrust / rocket_mass
+                thrust_vec / rocket_mass
                 + self.calc_force()
-                - dmassfuel / rocket_mass * self.rocket.velocity
+                - d_mass_fuel / rocket_mass * self.rocket.velocity
             ) * self.dt
             self.rocket.position += self.rocket.velocity * self.dt
             if iteration - prev == BASE_ANIMATION_STEPS:
-                self.path.append(self.rocket.position)
+                self.path.append((self.rocket.position, self.rocket.angle))
                 prev = iteration
             if (crash_dest := self.crash_checking()) != None:
                 return crash_dest
@@ -136,23 +147,45 @@ class Model:
                 print(self.rocket.position)
                 sys.exit()
         return G * force
+    
+    @property
+    def rocket_mass(self):
+        return self.rocket.mass_fuel + self.rocket.mass_ship
 
+    @property
+    def rocket_inertia(self):
+        return self.rocket_mass / NUM_ROCKET_MASS_POINTS * self.mass_point_squared_sum
+    
+    def calc_torque(self):
+        # TODO: Torque calculation on Overleaf is incorrect
+        torque = 0
+        for j in range(NUM_ROCKET_MASS_POINTS):
+            self.planets: list[Planet]
+            heading = Vector2d(cos(self.rocket.angle), sin(self.rocket.angle))
+            force = Vector2d(0, 0)
+
+            for planet in self.planets:
+                vec = planet.position - self.rocket.position - self.djs[j] * heading
+                force += planet.mass / (vec).mag() ** 3 * vec
+            torque += self.djs[j] * (heading.x * force.y - heading.y * force.x)
+        return torque
 
 if __name__ == "__main__":
     # angle = 0
     # x, y = cos(angle), sin(angle)
     # speed = sqrt(10 * G)
-    r = Rocket(Vector2d(0, 0), Vector2d(0, 0), 100, 100, 3e-7, Vector2d(1e-8, -1e-8))
+    r = Rocket(Vector2d(0, 0), 3 * pi / 4, Vector2d(0, 0), 100, 100, 3e-7, 2e-8)
     planets = [
         Planet(Vector2d(10, 10), 100, 2),
         Planet(Vector2d(25, 60), 100, 2),
         Planet(Vector2d(50, 90), 100, 2),
         Planet(Vector2d(100, 100), 100, 2),
     ]
-    # m = Model(r, planets, 2_000, 10)
-    # m.estimate_path()
-    # m.save_path("test_paths/test2.path", overwrite=True)
-
-    m = Model("test_paths/test2.path", 2_000)
+    m = Model(r, planets, 1_00, 10)
+    path = "test_paths/test3.path"
     m.estimate_path()
-    m.save_path("test_paths/test2.path", overwrite=False)
+    m.save_path(path, overwrite=True)
+
+    # m = Model(path, 2_000)
+    # m.estimate_path()
+    # m.save_path(path, overwrite=False)
