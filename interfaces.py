@@ -4,7 +4,8 @@ from collections.abc import Sequence, Callable
 from math import sqrt
 
 
-G = 6.6674e-11
+# G = 6.6674e-11
+G = 10
 BASE_ANIMATION_STEPS = 10
 NUM_ROCKET_MASS_POINTS = 5
 
@@ -78,6 +79,7 @@ class Rocket:
     position: Vector2d
     angle: float
     velocity: Vector2d
+    rotational_velocity: float
     mass_ship: float
 
     mass_fuel: float = 0
@@ -86,7 +88,7 @@ class Rocket:
     length: float = 0
 
     def __str__(self):
-        return f"{self.position} {self.angle} {self.velocity} {self.mass_ship} {self.mass_fuel} {self.speed_fuel} {self.thrust} {self.length}"
+        return f"{self.position} {self.angle} {self.velocity} {self.rotational_velocity} {self.mass_ship} {self.mass_fuel} {self.speed_fuel} {self.thrust} {self.length}"
 
 
 @dataclass
@@ -94,15 +96,9 @@ class Planet:
     position: Vector2d
     mass: float
     radius: float = 0
-    air_density_func: Callable[[int], int] = lambda dist: 0
 
     def __str__(self):
         return f"{self.position.x} {self.position.y} {self.mass} {self.radius}"
-
-    def from_str(self, string: str):
-        l = list(map(float, string.split()))
-        self.position = Vector2d(l[0], l[1])
-        self.mass = l[2]
 
 
 def planet_from_str(string: str):
@@ -117,14 +113,16 @@ def point_from_str(str: str) -> tuple[Vector2d, float]:
     l = list(map(float, str.split()))
     return Vector2d(l[0], l[1]), l[2]
 
+
 def rocket_from_str(str: str):
     l = list(map(float, str.split()))
     position = Vector2d(l[0], l[1])
     angle = l[2]
     velocity = Vector2d(l[3], l[4])
-    ship_mass = l[5]
-    fuel_mass = l[6]
-    fuel_speed = l[7]
-    thrust = l[8]
-    length = l[9]
-    return Rocket(position, angle, velocity, ship_mass, fuel_mass, fuel_speed, thrust, length)
+    rotational_velocity = l[5]
+    ship_mass = l[6]
+    fuel_mass = l[7]
+    fuel_speed = l[8]
+    thrust = l[9]
+    length = l[10]
+    return Rocket(position, angle, velocity, rotational_velocity, ship_mass, fuel_mass, fuel_speed, thrust, length)

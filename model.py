@@ -6,6 +6,7 @@ import datetime
 from typing import overload
 import sys
 from math import pi, sin, cos
+from copy import copy
 
 
 class Model:
@@ -15,47 +16,48 @@ class Model:
         self,
         rocket: Rocket,
         planets: Sequence[Planet],
-        simulation_hours: int,
-        dt: int,
+        simulation_hours: float,
+        dt: float,
         /,
     ): ...
 
     @overload
-    def __init__(self, path: str, simulation_hours: int, /): ...
+    def __init__(self, path: str, simulation_hours: float, /): ...
 
     def __init__(self, *args) -> None:
-        self.djs = [
-            (-1 / 2 + j / (NUM_ROCKET_MASS_POINTS - 1)) * self.rocket.length
-            for j in range(NUM_ROCKET_MASS_POINTS)
-        ]
-        self.mass_point_sum = sum(self.djs)
-        self.mass_point_squared_sum = self.mass_point_sum * self.rocket.length
-        d_mass = -self.rocket.thrust / self.rocket.speed_fuel * self.dt
-        self.d_rotational_inertia = d_mass / NUM_ROCKET_MASS_POINTS * self.mass_point_squared_sum
-        
         if len(args) == 4:
             self.rocket = args[0]
             self.planets = args[1]
             self.simulation_seconds = args[2] * 3_600
             self.dt = args[3]  # units: seconds
             self.path: list[tuple[Vector2d, float]] = []
-            return
-        if len(args) == 2:
+        elif len(args) == 2:
             path = args[0]
             if not exists(path):
                 raise FileNotFoundError(f"{path} not found")
             self.load_from_path(path)
             self.simulation_seconds = args[1] * 3_600
             self.path: list[tuple[Vector2d, float]] = []
-            return
-        raise ValueError("Incorrect number of arguments provided")
+        else:
+            raise ValueError("Incorrect number of arguments provided")
+
+        self.djs = [
+            (-1 / 2 + j / (NUM_ROCKET_MASS_POINTS - 1)) * self.rocket.length
+            for j in range(NUM_ROCKET_MASS_POINTS)
+        ]
+        self.mass_point_squared_sum = sum(dj ** 2 for dj in self.djs)
+        self.d_mass_fuel = -self.rocket.thrust / self.rocket.speed_fuel
+        print("d_mass_fuel:", self.d_mass_fuel)
+        self.d_rotational_inertia = self.d_mass_fuel / NUM_ROCKET_MASS_POINTS * self.mass_point_squared_sum
+        print("d_rot_inertia:", self.d_rotational_inertia)
+
 
     # endregion
 
     def load_from_path(self, path):
         # read header
         with open(path) as f:
-            self.dt = int(f.readline())
+            self.dt = float(f.readline())
             self.planets = []
             n_planets = int(f.readline())
             for _ in range(n_planets):
@@ -107,35 +109,48 @@ class Model:
         return None
 
     def estimate_path(self) -> Planet | None:
-        d_mass_fuel = -self.rocket.thrust / self.rocket.speed_fuel * self.dt
-        print("dmassfuel:", d_mass_fuel)
         prev = 0
         self.path.append((self.rocket.position, self.rocket.angle))
-        for iteration in tqdm.tqdm(range(self.simulation_seconds // self.dt)):
-            if self.rocket.mass_fuel == 0:
-                thrust = 0
-                d_mass_fuel = 0
-            elif self.rocket.mass_fuel + d_mass_fuel < 0:
-                thrust_percent = self.rocket.mass_fuel / -d_mass_fuel
-                thrust = self.rocket.thrust * thrust_percent
-                self.rocket.mass_fuel = 0
-                d_mass_fuel = 0
-            else:
-                thrust = self.rocket.thrust
-                self.rocket.mass_fuel += d_mass_fuel
-            rocket_mass = self.rocket_mass
-            thrust_vec = Vector2d(cos(self.rocket.angle), sin(self.rocket.angle)) * thrust
-            self.rocket.velocity += (
-                thrust_vec / rocket_mass
-                + self.calc_force()
-                - d_mass_fuel / rocket_mass * self.rocket.velocity
-            ) * self.dt
-            self.rocket.position += self.rocket.velocity * self.dt
+        for iteration in tqdm.tqdm(range(int(self.simulation_seconds // self.dt))):
+            # rocket_copy = copy(self.rocket)
+            self.update_angle()
+            self.update_pos()
             if iteration - prev == BASE_ANIMATION_STEPS:
                 self.path.append((self.rocket.position, self.rocket.angle))
                 prev = iteration
             if (crash_dest := self.crash_checking()) != None:
                 return crash_dest
+
+    def update_pos(self):
+        if self.rocket.mass_fuel == 0:
+            thrust = 0
+            self.d_mass_fuel = 0
+        elif self.rocket.mass_fuel + self.d_mass_fuel * self.dt < 0:
+            thrust_percent = self.rocket.mass_fuel / -self.d_mass_fuel / self.dt
+            thrust = self.rocket.thrust * thrust_percent
+            self.rocket.mass_fuel = 0
+            self.d_mass_fuel = 0
+        else:
+            thrust = self.rocket.thrust
+            self.rocket.mass_fuel += self.d_mass_fuel * self.dt
+
+        thrust_vec = Vector2d(cos(self.rocket.angle), sin(self.rocket.angle)) * thrust
+        self.rocket.velocity += (
+            thrust_vec / self.rocket_mass
+            + self.calc_force()
+            - self.d_mass_fuel / self.rocket_mass * self.rocket.velocity
+        ) * self.dt
+        self.rocket.position += self.rocket.velocity * self.dt
+
+    def update_angle(self):
+        rot_inertia = self.rocket_mass / NUM_ROCKET_MASS_POINTS * self.mass_point_squared_sum
+        d_rot_inertia = self.d_mass_fuel / NUM_ROCKET_MASS_POINTS * self.mass_point_squared_sum
+        self.rocket.rotational_velocity += (
+            (self.calc_torque() - d_rot_inertia * self.rocket.rotational_velocity)
+            / rot_inertia
+            * self.dt
+        )
+        self.rocket.angle += self.rocket.rotational_velocity * self.dt
 
     def calc_force(self) -> Vector2d:
         force = Vector2d([0, 0])
@@ -144,48 +159,48 @@ class Model:
             try:
                 force += (planet.position - self.rocket.position) * planet.mass / dist**3
             except:
-                print(self.rocket.position)
                 sys.exit()
         return G * force
-    
+
+    def calc_torque(self) -> float:
+        torque: float = 0
+        for j in range(NUM_ROCKET_MASS_POINTS):
+            heading = Vector2d(cos(self.rocket.angle), sin(self.rocket.angle))
+            t_heading = Vector2d(-sin(self.rocket.angle), cos(self.rocket.angle))
+
+            force = Vector2d(0, 0)
+            for planet in self.planets:
+                planet: Planet
+                nom = planet.mass * (planet.position - self.rocket.position)
+                denom = (self.rocket.position + self.djs[j] * heading - planet.position).mag() ** 3
+                force += nom / denom
+
+            torque += self.djs[j] * (t_heading.x * force.x + t_heading.y * force.y)
+        return torque * G * self.rocket_mass / NUM_ROCKET_MASS_POINTS
+
     @property
     def rocket_mass(self):
         return self.rocket.mass_fuel + self.rocket.mass_ship
 
-    @property
-    def rocket_inertia(self):
-        return self.rocket_mass / NUM_ROCKET_MASS_POINTS * self.mass_point_squared_sum
-    
-    def calc_torque(self):
-        # TODO: Torque calculation on Overleaf is incorrect
-        torque = 0
-        for j in range(NUM_ROCKET_MASS_POINTS):
-            self.planets: list[Planet]
-            heading = Vector2d(cos(self.rocket.angle), sin(self.rocket.angle))
-            force = Vector2d(0, 0)
-
-            for planet in self.planets:
-                vec = planet.position - self.rocket.position - self.djs[j] * heading
-                force += planet.mass / (vec).mag() ** 3 * vec
-            torque += self.djs[j] * (heading.x * force.y - heading.y * force.x)
-        return torque
 
 if __name__ == "__main__":
-    # angle = 0
-    # x, y = cos(angle), sin(angle)
-    # speed = sqrt(10 * G)
-    r = Rocket(Vector2d(0, 0), 3 * pi / 4, Vector2d(0, 0), 100, 100, 3e-7, 2e-8)
+    # r = Rocket(Vector2d(0, 0), -3 * pi / 4, Vector2d(0, 0), 0, 100, 100, 3e-5, 1e-8, 20)
+    # planets = [
+    #     Planet(Vector2d(10, 10), 100, 2),
+    #     Planet(Vector2d(25, 60), 100, 2),
+    #     Planet(Vector2d(50, 90), 100, 2),
+    #     Planet(Vector2d(100, 100), 100, 2),
+    # ]
+    r = Rocket(Vector2d(-2.88, -1.82), 0, Vector2d(1, -5), 0, 5, 5, 1, 0, 1)
     planets = [
-        Planet(Vector2d(10, 10), 100, 2),
-        Planet(Vector2d(25, 60), 100, 2),
-        Planet(Vector2d(50, 90), 100, 2),
-        Planet(Vector2d(100, 100), 100, 2),
+        Planet(Vector2d(4.56, 1.44), 48, 2),
     ]
-    m = Model(r, planets, 1_00, 10)
     path = "test_paths/test3.path"
+
+    m = Model(r, planets, 0.001, 0.0001)
     m.estimate_path()
     m.save_path(path, overwrite=True)
 
-    # m = Model(path, 2_000)
+    # m = Model(path, 9_000)
     # m.estimate_path()
     # m.save_path(path, overwrite=False)

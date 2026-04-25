@@ -3,6 +3,7 @@ from interfaces import *
 from os.path import join
 import colorsys
 from PIL import Image
+from math import pi
 
 
 class Visualize:
@@ -24,7 +25,7 @@ class Visualize:
         self.max_points = Vector2d(0, 0)
         # self.margin = Vector2d(50, 50)
         with open(file_path) as f:
-            self.dt = int(f.readline())
+            self.dt = float(f.readline())
             self.planets = []
             n_planets = int(f.readline())
             for _ in range(n_planets):
@@ -49,15 +50,18 @@ class Visualize:
                     self.rocket = rocket_from_str(line)
         x_span = self.max_points.x - self.offset.x
         y_span = self.max_points.y - self.offset.y
-        self.pos, self.angle = self.path[0]
         self.multi = min(self.screen_size.x / x_span, self.screen_size.y / y_span)
+        self.offset = Vector2d(-6, -7)
+        self.multi = 30
         self.offset *= self.multi
         self.path = [(point * self.multi, angle) for point, angle in self.path]
+        self.pos, self.angle = self.path[0]
         self.planets = [
-            Planet(planet.position * self.multi, planet.mass, planet.radius * self.multi)
+            Planet(planet.position * self.multi, planet.mass, 50)
+            # Planet(planet.position * self.multi, planet.mass, planet.radius * self.multi)
             for planet in self.planets
         ]
-        self.rocket_surface = pygame.Surface((self.rocket.length * self.multi, 10 * self.multi), pygame.SRCALPHA)
+        self.rocket_surface = pygame.Surface((20, 2), pygame.SRCALPHA)
         self.rocket_surface.fill("black")
         self.draw_grid()
         self.draw_planets()
@@ -110,20 +114,20 @@ class Visualize:
         images = []
         self.step_size = max(len(self.path) // FRAMES, 1)
         self.path
-        self.draw(True)  # skip the initial, black screen
+        self.draw()  # skip the initial, black screen
         while self.time_i < len(self.path) - 1:
             image = Image.frombytes(
                 "RGB",
                 (int(self.screen_size.x), int(self.screen_size.y)),
                 pygame.image.tobytes(self.screen, "RGB"),
             )
-            self.draw(True)
+            self.draw()
             images.append(image)
 
         print("Saving animation...")
-        # if not save_as_frames:
-        #     images[0].save(save_path, save_all=True, append_images=images[1:], duration=50)
-        #     return
+        if not save_as_frames:
+            images[0].save(save_path, save_all=True, append_images=images[1:], duration=25)
+            return
         for i, image in enumerate(images):
             image.save(join(save_path, f"image-{i}.png"))
 
@@ -152,12 +156,12 @@ class Visualize:
 
     def draw_path(self, high_fidelity):
         try:
-            n_pos, _angle = next(self.gen)
+            n_pos, self.angle = next(self.gen)
             if high_fidelity:
                 for i in range(self.time_i + 1, self.time_i + self.step_size):
                     if i == len(self.path):
                         break
-                    n_pos, _angle = self.path[i]
+                    n_pos, self.angle = self.path[i]
                     pygame.draw.line(
                         self.path_drawing,
                         self.get_color(),
@@ -177,16 +181,16 @@ class Visualize:
             self.gen = self.time_step()
 
     def draw_rocket(self):
-        rotated = pygame.transform.rotate(self.rocket_surface, self.angle)
-        self.screen.blit(rotated, self.pos.pos)
+        rotated = pygame.transform.rotate(self.rocket_surface, -self.angle * 180 / pi)
+        self.screen.blit(rotated, (self.pos.x - rotated.get_rect().centerx - self.offset.x, self.pos.y - rotated.get_rect().centery - self.offset.y))
 
     def draw_grid(self):
         AXIS_COLOR = "black"
-        MAJOR_TIC_SIZE = 25 * self.multi
+        MAJOR_TIC_SIZE = 5 * self.multi
         print(MAJOR_TIC_SIZE)
         MAJOR_TIC_COLOR = "#999999"
 
-        MINOR_TIC_SIZE = 5 * self.multi
+        MINOR_TIC_SIZE = 1 * self.multi
         MINOR_TIC_COLOR = "#E0E0E0"
 
         # hacky way of doing things
@@ -218,11 +222,12 @@ class Visualize:
     def draw(self, high_fidelity=False):
         self.draw_path(high_fidelity)
         self.screen.blit(self.path_drawing, [0, 0])
+        self.draw_rocket()
         pygame.display.flip()
 
 
 if __name__ == "__main__":
-    v = Visualize(join("test_paths", "test2.path"))
+    v = Visualize(join("test_paths", "test3.path"))
+    v.save_animation(join("animations", "test.gif"))
+    # v.save_animation("animation_frames", save_as_frames=True)
     # v.run()
-    # v.save_animation(join("animations", "test.gif"))
-    v.save_animation("animation_frames", save_as_frames=True)
