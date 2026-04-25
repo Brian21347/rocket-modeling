@@ -125,4 +125,14 @@ def rocket_from_str(str: str):
     fuel_speed = l[8]
     thrust = l[9]
     length = l[10]
-    return Rocket(position, angle, velocity, rotational_velocity, ship_mass, fuel_mass, fuel_speed, thrust, length)
+    return Rocket(
+        position,
+        angle,
+        velocity,
+        rotational_velocity,
+        ship_mass,
+        fuel_mass,
+        fuel_speed,
+        thrust,
+        length,
+    )

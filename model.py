@@ -6,7 +6,6 @@ import datetime
 from typing import overload
 import sys
 from math import pi, sin, cos
-from copy import copy
 
 
 class Model:
@@ -45,12 +44,11 @@ class Model:
             (-1 / 2 + j / (NUM_ROCKET_MASS_POINTS - 1)) * self.rocket.length
             for j in range(NUM_ROCKET_MASS_POINTS)
         ]
-        self.mass_point_squared_sum = sum(dj ** 2 for dj in self.djs)
+        self.mass_point_squared_sum = sum(dj**2 for dj in self.djs)
         self.d_mass_fuel = -self.rocket.thrust / self.rocket.speed_fuel
-        print("d_mass_fuel:", self.d_mass_fuel)
-        self.d_rotational_inertia = self.d_mass_fuel / NUM_ROCKET_MASS_POINTS * self.mass_point_squared_sum
-        print("d_rot_inertia:", self.d_rotational_inertia)
-
+        self.d_rotational_inertia = (
+            self.d_mass_fuel / NUM_ROCKET_MASS_POINTS * self.mass_point_squared_sum
+        )
 
     # endregion
 
@@ -112,7 +110,6 @@ class Model:
         prev = 0
         self.path.append((self.rocket.position, self.rocket.angle))
         for iteration in tqdm.tqdm(range(int(self.simulation_seconds // self.dt))):
-            # rocket_copy = copy(self.rocket)
             self.update_angle()
             self.update_pos()
             if iteration - prev == BASE_ANIMATION_STEPS:
