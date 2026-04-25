@@ -191,16 +191,18 @@ if __name__ == "__main__":
     #     Planet(Vector2d(50, 90), 100, 2),
     #     Planet(Vector2d(100, 100), 100, 2),
     # ]
-    r = Rocket(Vector2d(-2.88, -1.82), 0, Vector2d(1, -5), 0, 5, 5, 1, 0, 1)
+    r = Rocket(Vector2d(30, 20), -7 * pi / 16, Vector2d(0, 0), 0, 4, 10, 4, 6, 1)
     planets = [
-        Planet(Vector2d(4.56, 1.44), 48, 2),
+        Planet(Vector2d(0, 0), 50, 2),
+        Planet(Vector2d(60, 0), 50, 2),
+        Planet(Vector2d(30, 45), 50, 2),
     ]
     path = "test_paths/test3.path"
 
-    m = Model(r, planets, 0.001, 0.0001)
-    m.estimate_path()
-    m.save_path(path, overwrite=True)
-
-    # m = Model(path, 9_000)
+    # m = Model(r, planets, 0.010, 0.0001)
     # m.estimate_path()
-    # m.save_path(path, overwrite=False)
+    # m.save_path(path, overwrite=True)
+
+    m = Model(path, 0.010)
+    m.estimate_path()
+    m.save_path(path, overwrite=False)

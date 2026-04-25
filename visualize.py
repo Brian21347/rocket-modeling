@@ -51,13 +51,13 @@ class Visualize:
         x_span = self.max_points.x - self.offset.x
         y_span = self.max_points.y - self.offset.y
         self.multi = min(self.screen_size.x / x_span, self.screen_size.y / y_span)
-        self.offset = Vector2d(-6, -7)
-        self.multi = 30
+        self.offset = Vector2d(-20, -20)
+        self.multi = 5
         self.offset *= self.multi
         self.path = [(point * self.multi, angle) for point, angle in self.path]
         self.pos, self.angle = self.path[0]
         self.planets = [
-            Planet(planet.position * self.multi, planet.mass, 50)
+            Planet(planet.position * self.multi, planet.mass, 15)
             # Planet(planet.position * self.multi, planet.mass, planet.radius * self.multi)
             for planet in self.planets
         ]
@@ -109,7 +109,7 @@ class Visualize:
 
         TIME_LIMIT = 20  # seconds
         # FPS = 60
-        FPS = 12
+        FPS = 24
         FRAMES = TIME_LIMIT * FPS
         images = []
         self.step_size = max(len(self.path) // FRAMES, 1)
@@ -126,7 +126,7 @@ class Visualize:
 
         print("Saving animation...")
         if not save_as_frames:
-            images[0].save(save_path, save_all=True, append_images=images[1:], duration=25)
+            images[0].save(save_path, save_all=True, append_images=images[1:], duration=50)
             return
         for i, image in enumerate(images):
             image.save(join(save_path, f"image-{i}.png"))
@@ -186,11 +186,11 @@ class Visualize:
 
     def draw_grid(self):
         AXIS_COLOR = "black"
-        MAJOR_TIC_SIZE = 5 * self.multi
+        MAJOR_TIC_SIZE = 10 * self.multi
         print(MAJOR_TIC_SIZE)
         MAJOR_TIC_COLOR = "#999999"
 
-        MINOR_TIC_SIZE = 1 * self.multi
+        MINOR_TIC_SIZE = 2 * self.multi
         MINOR_TIC_COLOR = "#E0E0E0"
 
         # hacky way of doing things
@@ -230,4 +230,4 @@ if __name__ == "__main__":
     v = Visualize(join("test_paths", "test3.path"))
     v.save_animation(join("animations", "test.gif"))
     # v.save_animation("animation_frames", save_as_frames=True)
-    # v.run()
+    v.run()
